@@ -1,0 +1,97 @@
+definitions:
+  diploma_modules_auth_handler_model.LoginInput:
+    properties:
+      password:
+        example: secure123
+        type: string
+      phone_number:
+        example: "+123456789"
+        type: string
+    type: object
+  diploma_modules_auth_handler_model.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  diploma_modules_auth_handler_model.RegisterInput:
+    properties:
+      confirm_password:
+        example: secure123
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: secure123
+        type: string
+      phone_number:
+        example: "+123456789"
+        type: string
+    type: object
+  diploma_modules_auth_handler_model.RegisterResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+    type: object
+  gin.H:
+    additionalProperties: {}
+    type: object
+info:
+  contact: {}
+paths:
+  /api/auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login user and return tokens
+      parameters:
+      - description: Login input
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/diploma_modules_auth_handler_model.LoginInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_auth_handler_model.LoginResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: User login
+      tags:
+      - auth
+  /api/auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: Register input
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/diploma_modules_auth_handler_model.RegisterInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/diploma_modules_auth_handler_model.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: User registration
+      tags:
+      - auth
+swagger: "2.0"

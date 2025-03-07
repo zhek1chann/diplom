@@ -14,6 +14,7 @@ lint:
 install-deps:
 	GOBIN=$(LOCAL_BIN) go install github.com/pressly/goose/v3/cmd/goose@v3.20.0
 	GOBIN=$(LOCAL_BIN) go install github.com/rakyll/statik@v0.1.7
+	go install github.com/swaggo/swag/cmd/swag@latest
 
 get-deps: 
 	go get -u github.com/swaggo/swag/cmd/swag

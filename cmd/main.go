@@ -1,8 +1,8 @@
 package main
 
 import (
-	"diploma/internal/app"
 	"context"
+	"diploma/internal/app"
 	"log"
 )
 

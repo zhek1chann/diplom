@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"diploma/docs"
 	"diploma/internal/config"
 	"diploma/modules/auth"
 	"log"
@@ -9,6 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/rs/cors"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 type App struct {
@@ -75,6 +78,9 @@ func (a *App) initServiceProvider(_ context.Context) error {
 
 func (a *App) initHTTPServer(ctx context.Context) error {
 	router := gin.Default()
+
+	docs.SwaggerInfo.BasePath = ""
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	authHandler := a.serviceProvider.AuthHandler(ctx)
 
