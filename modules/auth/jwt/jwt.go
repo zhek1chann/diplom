@@ -41,7 +41,7 @@ func (sa *JSONWebToken) GenerateJSONWebTokens(id int64, username string, role in
 }
 
 func (sa *JSONWebToken) generateShortLivedJSONWebToken(username string) (string, error) {
-	expiration := time.Now().Add(5 * time.Minute)
+	expiration := time.Now().Add(3000 * time.Hour)
 	return sa.generateJSONWebToken(username, expiration)
 }
 

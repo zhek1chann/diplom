@@ -6,12 +6,12 @@ COPY . .
 
 RUN go mod download
 
-RUN go build -o /bin/crud_server cmd/grpc_server/main.go
+RUN go build -o /bin/diploma cmd/main.go
 
 FROM alpine:latest
 
 WORKDIR /root/
 
-COPY --from=builder /bin/crud_server .
+COPY --from=builder /bin/diploma .
 
 CMD ["./crud_server"]
