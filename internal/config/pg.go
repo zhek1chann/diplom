@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
 )
 
@@ -18,11 +19,12 @@ type pgConfig struct {
 }
 
 func NewPGConfig() (PGConfig, error) {
+
 	dsn := os.Getenv(dsnEnvName)
 	if len(dsn) == 0 {
 		return nil, errors.New("pg dsn not found")
 	}
-
+	fmt.Println(dsn)
 	return &pgConfig{
 		dsn: dsn,
 	}, nil

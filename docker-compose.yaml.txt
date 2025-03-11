@@ -14,8 +14,6 @@ services:
       - "${PG_PORT}:5432"
     volumes:
       - postgres_volume:/var/lib/postgresql/data
-    networks:
-      - diplom-net
   migrator:
     build:
       context: .
@@ -23,20 +21,3 @@ services:
     restart: on-failure
     environment:
       DB_HOST: db
-    networks:
-      - diplom-net
-  app:  
-    image: diploma:latest
-    ports:
-      - "8080:8080"
-    volumes:
-      - "./.env:/root/.env"
-    depends_on:
-      - pg
-    networks:
-      - diplom-net
-
-networks:
-  diplom-net:
-    driver: bridge
-

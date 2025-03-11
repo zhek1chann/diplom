@@ -14,4 +14,6 @@ WORKDIR /root/
 
 COPY --from=builder /bin/diploma .
 
-CMD ["./crud_server"]
+COPY .env .
+
+CMD ["./diploma"]
