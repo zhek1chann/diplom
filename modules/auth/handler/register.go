@@ -23,6 +23,7 @@ import (
 // @Failure      400  {object}  gin.H
 // @Router       /api/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
+
 	var form struct {
 		modelApi.RegisterInput
 		validator.Validator
@@ -42,6 +43,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"errors": form.Errors})
 		return
 	}
+	// TODO: refactor return when user already exist
 	authUser := converter.ToServiceFromRegisterInput(form.RegisterInput)
 	authUser.Info.Role = 0
 	id, err := h.service.Register(c.Request.Context(), authUser)
