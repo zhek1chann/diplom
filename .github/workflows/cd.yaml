@@ -53,9 +53,7 @@ jobs:
         run: |
           TAG_NAME_NEW=$(echo $GITHUB_SHA | head -c7)
           echo $TAG_NAME_NEW
-
-          echo $TAG_NAME_NEW
-          ssh -i id_rsa.pem -o StrictHostKeyChecking=no root@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -i id_rsa.pem -o StrictHostKeyChecking=no root@${{ secrets.SERVER_HOST }} "
             cd diploma 
             pwd
             touch todo.txt
@@ -75,9 +73,10 @@ jobs:
             echo $TAG_NAME_NEW
             echo "something"
             
-            docker pull 188.227.35.6:5000/diploma-server:55a1918
+            docker pull 188.227.35.6:5000/diploma-server:55a1918 || true
+
 
             cd diploma 
             docker-compose up -d
 
-          EOF
+          "
