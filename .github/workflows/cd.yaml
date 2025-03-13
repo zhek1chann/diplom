@@ -7,7 +7,7 @@ on:
     branches: [ main, master ]
 
 env:
-  REGISTRY: "188.227.35.6"
+  REGISTRY: "188.227.35.6:5000"
   IMAGE_NAME: "diploma-server"
   CONTAINER_NAME: "diploma-container"
 
