@@ -35,6 +35,8 @@ services:
       - pg
     networks:
       - diplom-net
+    env_file:
+      - .env
 
 networks:
   diplom-net:
