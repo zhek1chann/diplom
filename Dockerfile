@@ -14,6 +14,4 @@ WORKDIR /root/
 
 COPY --from=builder /bin/diploma .
 
-COPY .env .
-
 CMD ["./diploma"]

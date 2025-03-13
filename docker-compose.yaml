@@ -16,15 +16,15 @@ services:
       - postgres_volume:/var/lib/postgresql/data
     networks:
       - diplom-net
-  migrator:
-    build:
-      context: .
-      dockerfile: migration.Dockerfile
-    restart: on-failure
-    environment:
-      DB_HOST: db
-    networks:
-      - diplom-net
+#  migrator:
+#    build:
+#      context: .
+#      dockerfile: migration.Dockerfile
+#    restart: on-failure
+#    environment:
+#      DB_HOST: db
+#    networks:
+#      - diplom-net
   app:  
     image: diploma:latest
     ports:
