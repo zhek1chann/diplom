@@ -29,6 +29,7 @@ jobs:
         run: |
           TAG_NAME=$(echo $GITHUB_SHA | head -c7)
           docker buildx create --use
+          echo $TAG_NAME
           docker buildx build --no-cache --push --tag $REGISTRY/$IMAGE_NAME:$TAG_NAME -f Dockerfile .
 
 
