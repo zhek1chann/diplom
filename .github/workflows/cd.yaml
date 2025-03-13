@@ -67,16 +67,10 @@ jobs:
 
             #
             sed -i "s/^TAG_NAME=.*/TAG_NAME=${TAG_NAME_NEW}/" .env
-            cd ..
-            # Pull image
-            echo "something"
             echo $TAG_NAME_NEW
-            echo "something"
             
-            docker pull 188.227.35.6:5000/diploma-server:55a1918 || true
+            docker pull 188.227.35.6:5000/diploma-server:$TAG_NAME_NEW || true
 
-
-            cd diploma 
             docker-compose up -d
 
           "
