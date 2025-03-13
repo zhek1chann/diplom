@@ -52,7 +52,7 @@ jobs:
       - name: Connect to server and deploy
         run: |
           TAG_NAME_NEW=$(echo $GITHUB_SHA | head -c7)
-          ssh -i id_rsa.pem -o StrictHostKeyChecking=no root@${{ secrets.SERVER_HOST }} 
+          ssh -i id_rsa.pem -o StrictHostKeyChecking=no root@${{ secrets.SERVER_HOST }} << 'EOF'
             echo "something"
             cd diploma 
             touch todo.txt
@@ -72,4 +72,5 @@ jobs:
 
             cd diploma 
             docker-compose up -d
+
           EOF
