@@ -51,7 +51,7 @@ jobs:
 
       - name: Connect to server and deploy
         run: |
-          ssh -i id_rsa.pem -o StrictHostKeyChecking=no root@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -i id_rsa.pem root@${{ secrets.SERVER_HOST }} << 'EOF'
             # Stop existing container
             docker stop diploma-container || true
             docker rm diploma-container || true
