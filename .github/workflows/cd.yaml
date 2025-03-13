@@ -54,14 +54,7 @@ jobs:
           TAG_NAME=$(echo $GITHUB_SHA | head -c7)
           ssh -i id_rsa.pem -o StrictHostKeyChecking=no root@${{ secrets.SERVER_HOST }} << 'EOF'
             cd diploma 
-
-             if grep -q "^TAG_NAME=" .env; then
-              # Replace the existing TAG_NAME line with the new value
-              sed -i "s/^TAG_NAME=.*/TAG_NAME=${TAG_NAME}/" .env
-            else
-              # Append the TAG_NAME variable if it doesn't exist
-              echo "TAG_NAME=${TAG_NAME}" >> .env
-            fi
+            touch todo.txt
 
             # Stop and remove containers, networks, etc.
             docker-compose down || true
@@ -70,9 +63,13 @@ jobs:
             docker ps -a --filter "ancestor=188.227.35.6:5000/diploma-server" --format "{{.ID}}" | xargs docker rm || true
             docker rmi diploma-server
 
+            #
+            sed -i "s/^TAG_NAME=.*/TAG_NAME=${TAG_NAME}/" .env
+            cd ..
             # Pull image
             docker pull 188.227.35.6/diploma-server:$TAG_NAME
-            set 
+
+            cd diploma 
             docker-compose up -d
 
           EOF
