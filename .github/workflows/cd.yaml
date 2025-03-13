@@ -52,12 +52,19 @@ jobs:
       - name: Connect to server and deploy
         run: |
           TAG_NAME=$(echo $GITHUB_SHA | head -c7)
-          ssh -i id_rsa.pem -o StrictHostKeyChecking=no root@${{ secrets.SERVER_HOST }} << 'EOF'
-            # Stop existing container
-            docker stop diploma-container || true
-            docker rm diploma-container || true
+          ssh -i id_rsa.pem -o StrictHostKeyChecking=no аroot@${{ secrets.SERVER_HOST }} << 'EOF'
+            cd diploma 
 
-            # Pull and run the new container
-            TAG_NAME=$(echo $GITHUB_SHA | head -c7)
-            docker run -d -p 50051:50051 --name diploma-container -t 188.227.35.6/diploma-server:$TAG_NAME
+            # Stop and remove containers, networks, etc.
+            docker-compose down || true
+
+            # Stop existing container and delete images
+            docker ps -a --filter "ancestor=188.227.35.6:5000/diploma-server" --format "{{.ID}}" | xargs docker rm || true
+            docker rmi diploma-server
+
+            # Pull image
+            docker pull 188.227.35.6/diploma-server:$TAG_NAME
+            
+            docker-compose up -d
+
           EOF
