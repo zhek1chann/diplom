@@ -23,6 +23,7 @@ jobs:
         run: |
           sudo ls /etc/docker/
           echo '{ "insecure-registries":["188.227.35.6:5000"] }' | sudo tee /etc/docker/daemon.json
+          sudo cat /etc/docker/daemon.json
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
