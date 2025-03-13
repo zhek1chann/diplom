@@ -52,9 +52,10 @@ jobs:
       - name: Connect to server and deploy
         run: |
           TAG_NAME_NEW=$(echo $GITHUB_SHA | head -c7)
+          echo $TAG_NAME_NEW
           ssh -i id_rsa.pem -o StrictHostKeyChecking=no root@${{ secrets.SERVER_HOST }} << 'EOF'
-            echo "something"
             cd diploma 
+            pwd
             touch todo.txt
 
             # Stop and remove containers, networks, etc.
@@ -68,7 +69,8 @@ jobs:
             sed -i "s/^TAG_NAME=.*/TAG_NAME=${TAG_NAME_NEW}/" .env
             cd ..
             # Pull image
-            docker pull 188.227.35.6/diploma-server:$TAG_NAME_NEW
+            echo $TAG_NAME_NEW
+            docker pull 188.227.35.6/diploma-server:55a1918
 
             cd diploma 
             docker-compose up -d
