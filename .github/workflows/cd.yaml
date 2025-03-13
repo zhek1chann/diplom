@@ -21,6 +21,7 @@ jobs:
 
       - name: Configure Docker Daemon for HTTP Registry
         run: |
+          sudo ls /etc/docker/
           echo '{ "insecure-registries":["188.227.35.6:5000"] }' | sudo tee /etc/docker/daemon.json
 
       - name: Set up Docker Buildx
