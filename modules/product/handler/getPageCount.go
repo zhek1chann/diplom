@@ -1,14 +1,5 @@
 package handler
 
-import (
-	"net/http"
-
-	"diploma/modules/product/handler/converter"
-	"diploma/modules/product/handler/model"
-
-	"github.com/gin-gonic/gin"
-)
-
 // Register godoc
 // @Summary      User registration
 // @Description  Register a new user
@@ -19,26 +10,26 @@ import (
 // @Success      201  {object}  modelApi.RegisterResponse
 // @Failure      400  {object}  gin.H
 // @Router       /api/product/pages [get]
-func (h *CatalogHandler) GetPageCount(c *gin.Context) {
-	// TODO: validator
-	var input model.PageCountInput
-	if err := c.ShouldBindQuery(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+// func (h *CatalogHandler) GetPageCount(c *gin.Context) {
+// 	// TODO: validator
+// 	var input model.PageCountInput
+// 	if err := c.ShouldBindQuery(&input); err != nil {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+// 		return
+// 	}
 
-	if input.PageSize <= 0 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "PageSize must be greater than zero"})
-		return
-	}
+// 	if input.PageSize <= 0 {
+// 		c.JSON(http.StatusBadRequest, gin.H{"error": "PageSize must be greater than zero"})
+// 		return
+// 	}
 
-	pageCount, err := h.service.PageCount(c, converter.ToServicePageCountFromAPI(&input))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
-	}
+// 	pageCount, err := h.service.PageCount(c, converter.ToServicePageCountFromAPI(&input))
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+// 		return
+// 	}
 
-	c.JSON(http.StatusOK, model.PageCountResponse{
-		Pages: pageCount.Pages,
-	})
-}
+// 	c.JSON(http.StatusOK, model.PageCountResponse{
+// 		Pages: pageCount.Pages,
+// 	})
+// }

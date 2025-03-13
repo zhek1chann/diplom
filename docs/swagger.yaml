@@ -36,6 +36,77 @@ definitions:
         example: 1
         type: integer
     type: object
+  diploma_modules_product_handler_model.DetailedProduct:
+    properties:
+      gtin:
+        type: integer
+      id:
+        type: integer
+      image_url:
+        type: string
+      min_price:
+        type: integer
+      name:
+        type: string
+      supplier_info:
+        $ref: '#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo'
+      suppliers:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo'
+        type: array
+    type: object
+  diploma_modules_product_handler_model.Product:
+    properties:
+      gtin:
+        type: integer
+      id:
+        type: integer
+      image_url:
+        type: string
+      min_price:
+        type: integer
+      name:
+        type: string
+      supplier_info:
+        $ref: '#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo'
+    type: object
+  diploma_modules_product_handler_model.ProductInput:
+    properties:
+      id:
+        type: integer
+    type: object
+  diploma_modules_product_handler_model.ProductListInput:
+    properties:
+      limit:
+        type: integer
+      offset:
+        type: integer
+    type: object
+  diploma_modules_product_handler_model.ProductListResponse:
+    properties:
+      product_list:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.Product'
+        type: array
+      total:
+        type: integer
+    type: object
+  diploma_modules_product_handler_model.ProductResponse:
+    properties:
+      product:
+        $ref: '#/definitions/diploma_modules_product_handler_model.DetailedProduct'
+    type: object
+  diploma_modules_product_handler_model.ProductSupplierInfo:
+    properties:
+      delivery_fee:
+        type: number
+      minimum_free_delivery_amount:
+        type: number
+      name:
+        type: string
+      supplier_id:
+        type: integer
+    type: object
   gin.H:
     additionalProperties: {}
     type: object
@@ -94,4 +165,56 @@ paths:
       summary: User registration
       tags:
       - auth
+  /api/product/:id:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: get product info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/diploma_modules_product_handler_model.ProductInput'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ProductResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: User registration
+      tags:
+      - product
+  /api/product/list:
+    get:
+      consumes:
+      - application/json
+      description: Register a new user
+      parameters:
+      - description: get product list
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/diploma_modules_product_handler_model.ProductListInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ProductListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/gin.H'
+      summary: User registration
+      tags:
+      - product
 swagger: "2.0"

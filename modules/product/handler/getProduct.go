@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"diploma/modules/product/handler/converter"
-	"diploma/modules/product/handler/model"
+	modelApi"diploma/modules/product/handler/model"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,16 +12,16 @@ import (
 // Register godoc
 // @Summary      User registration
 // @Description  Register a new user
-// @Tags         auth
+// @Tags         product
 // @Accept       json
 // @Produce      json
-// @Param        input body modelApi.RegisterInput true "Register input"
-// @Success      201  {object}  modelApi.RegisterResponse
+// @Param        input body modelApi.ProductInput true "get product info"
+// @Success      201  {object}  modelApi.ProductResponse
 // @Failure      400  {object}  gin.H
 // @Router       /api/product/:id [post]
 func (h *CatalogHandler) GetProduct(c *gin.Context) {
 	// TODO: validator
-	var input model.ProductInput
+	var input modelApi.ProductInput
 	if err := c.ShouldBindQuery(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

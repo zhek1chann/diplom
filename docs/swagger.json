@@ -83,6 +83,86 @@
                     }
                 }
             }
+        },
+        "/api/product/:id": {
+            "post": {
+                "description": "Register a new user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "product"
+                ],
+                "summary": "User registration",
+                "parameters": [
+                    {
+                        "description": "get product info",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_product_handler_model.ProductInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_product_handler_model.ProductResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/product/list": {
+            "get": {
+                "description": "Register a new user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "product"
+                ],
+                "summary": "User registration",
+                "parameters": [
+                    {
+                        "description": "get product list",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_product_handler_model.ProductListInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_product_handler_model.ProductListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -137,6 +217,116 @@
                 "id": {
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.DetailedProduct": {
+            "type": "object",
+            "properties": {
+                "gtin": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "min_price": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "supplier_info": {
+                    "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo"
+                },
+                "suppliers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo"
+                    }
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.Product": {
+            "type": "object",
+            "properties": {
+                "gtin": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "image_url": {
+                    "type": "string"
+                },
+                "min_price": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "supplier_info": {
+                    "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo"
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.ProductInput": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.ProductListInput": {
+            "type": "object",
+            "properties": {
+                "limit": {
+                    "type": "integer"
+                },
+                "offset": {
+                    "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.ProductListResponse": {
+            "type": "object",
+            "properties": {
+                "product_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.Product"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.ProductResponse": {
+            "type": "object",
+            "properties": {
+                "product": {
+                    "$ref": "#/definitions/diploma_modules_product_handler_model.DetailedProduct"
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.ProductSupplierInfo": {
+            "type": "object",
+            "properties": {
+                "delivery_fee": {
+                    "type": "number"
+                },
+                "minimum_free_delivery_amount": {
+                    "type": "number"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "supplier_id": {
+                    "type": "integer"
                 }
             }
         },

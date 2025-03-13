@@ -12,11 +12,11 @@ import (
 // Register godoc
 // @Summary      User registration
 // @Description  Register a new user
-// @Tags         auth
+// @Tags         product
 // @Accept       json
 // @Produce      json
-// @Param        input body modelApi.RegisterInput true "Register input"
-// @Success      200  {object}  modelApi.RegisterResponse
+// @Param        input body modelApi.ProductListInput true "get product list"
+// @Success      200  {object}  modelApi.ProductListResponse
 // @Failure      400  {object}  gin.H
 // @Router       /api/product/list [get]
 func (h *CatalogHandler) GetProductList(c *gin.Context) {
