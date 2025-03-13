@@ -52,7 +52,7 @@ jobs:
       - name: Connect to server and deploy
         run: |
           TAG_NAME=$(echo $GITHUB_SHA | head -c7)
-          ssh -i id_rsa.pem -o StrictHostKeyChecking=no аroot@${{ secrets.SERVER_HOST }} << 'EOF'
+          ssh -i id_rsa.pem -o StrictHostKeyChecking=no root@${{ secrets.SERVER_HOST }} << 'EOF'
             cd diploma 
 
             # Stop and remove containers, networks, etc.
