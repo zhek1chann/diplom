@@ -32,15 +32,13 @@ func (h *CatalogHandler) GetPageCount(c *gin.Context) {
 		return
 	}
 
-	total, err := h.service.PageCount(c, converter.ToServicePageCountFromAPI(&input))
+	pageCount, err := h.service.PageCount(c, converter.ToServicePageCountFromAPI(&input))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	pageCount := (total + input.PageSize - 1) / input.PageSize
-
 	c.JSON(http.StatusOK, model.PageCountResponse{
-		PageCount: pageCount,
+		Pages: pageCount.Pages,
 	})
 }

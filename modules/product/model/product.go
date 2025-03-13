@@ -1,8 +1,8 @@
 package model
 
 type ProductListQuery struct {
-	Page     int
-	PageSize int
+	Offset   int
+	Limit int
 }
 
 type ProductList struct {

@@ -1,4 +1,4 @@
-package catalog
+package product
 
 import (
 	"diploma/modules/product/handler"

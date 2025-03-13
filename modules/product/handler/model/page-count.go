@@ -5,5 +5,5 @@ type PageCountInput struct {
 }
 
 type PageCountResponse struct {
-	PageCount int `json:"pageCount"`
+	Pages int `json:"pages"`
 }

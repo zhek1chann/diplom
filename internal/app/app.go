@@ -5,6 +5,8 @@ import (
 	"diploma/docs"
 	"diploma/internal/config"
 	"diploma/modules/auth"
+	"diploma/modules/product"
+
 	"log"
 	"sync"
 
@@ -82,10 +84,13 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 	docs.SwaggerInfo.BasePath = ""
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	authHandler := a.serviceProvider.AuthHandler(ctx)
-
 	apiGroup := router.Group("/api")
+
+	authHandler := a.serviceProvider.AuthHandler(ctx)
 	auth.RegisterRoutes(apiGroup, authHandler)
+
+	productHandler := a.serviceProvider.ProductHandler(ctx)
+	product.RegisterRoutes(apiGroup, productHandler)
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},

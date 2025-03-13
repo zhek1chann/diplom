@@ -1,8 +1,8 @@
 package model
 
 type ProductListInput struct {
-	Page     int `json:"page"`
-	PageSize int `json:"pageSize"`
+	Limit     int `json:"limit"`
+	Offset int `json:"offset"`
 }
 
 type ProductListResponse struct {

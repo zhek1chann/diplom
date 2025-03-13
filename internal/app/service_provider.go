@@ -16,6 +16,10 @@ import (
 	authApi "diploma/modules/auth/handler"
 	userRepository "diploma/modules/auth/repository/user"
 	authService "diploma/modules/auth/service/auth"
+
+	productApi "diploma/modules/product/handler"
+	productRepository "diploma/modules/product/repository/product"
+	productService "diploma/modules/product/service"
 )
 
 type serviceProvider struct {
@@ -27,10 +31,17 @@ type serviceProvider struct {
 	dbClient  db.Client
 	txManager db.TxManager
 
+	// auth
 	authRepository authService.IAuthRepository
 	jwt            authService.IJWT
 	authService    authApi.IAuthService
 	authHanlder    *authApi.AuthHandler
+
+	// product
+
+	productRepository productService.IProductRepository
+	productService    productApi.IProductService
+	productHanlder    *productApi.CatalogHandler
 }
 
 func newServiceProvider() *serviceProvider {
@@ -146,4 +157,28 @@ func (s *serviceProvider) AuthHandler(ctx context.Context) *authApi.AuthHandler 
 	}
 
 	return s.authHanlder
+}
+
+func (s *serviceProvider) ProductRepository(ctx context.Context) productService.IProductRepository {
+	if s.productRepository == nil {
+		s.productRepository = productRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.productRepository
+}
+
+func (s *serviceProvider) ProductService(ctx context.Context) productApi.IProductService {
+	if s.productService == nil {
+		s.productService = productService.NewService(s.ProductRepository(ctx), s.TxManager(ctx))
+	}
+
+	return s.productService
+}
+
+func (s *serviceProvider) ProductHandler(ctx context.Context) *productApi.CatalogHandler {
+	if s.productHanlder == nil {
+		s.productHanlder = productApi.NewHandler(s.ProductService(ctx))
+	}
+
+	return s.productHanlder
 }

@@ -7,8 +7,8 @@ import (
 
 func ToServiceProductListQueryFromAPI(input *modelApi.ProductListInput) *model.ProductListQuery {
 	return &model.ProductListQuery{
-		Page:     input.Page,
-		PageSize: input.PageSize,
+		Limit:     input.Limit,
+		Offset: input.Offset,
 	}
 }
 

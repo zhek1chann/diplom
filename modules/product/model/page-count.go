@@ -4,6 +4,6 @@ type PageCountQuery struct {
 	PageSize int
 }
 
-type PageCountResult struct {
-	PageCount int
+type PageCount struct {
+	Pages int
 }
