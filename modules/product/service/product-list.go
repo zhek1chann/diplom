@@ -11,8 +11,14 @@ func (s *productServ) ProductList(ctx context.Context, query *model.ProductListQ
 		return nil, err
 	}
 
+	total, err := s.productRepository.GetTotalProducts(ctx)
+
+	if err != nil {
+		return nil, err
+	}
 	return &model.ProductList{
 		Products: productList,
+		Total:    total,
 	}, err
 }
 

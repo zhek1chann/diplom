@@ -166,7 +166,7 @@ paths:
       tags:
       - auth
   /api/product/:id:
-    post:
+    get:
       consumes:
       - application/json
       description: Register a new user

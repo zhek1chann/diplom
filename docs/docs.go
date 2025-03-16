@@ -96,7 +96,7 @@ const docTemplate = `{
             }
         },
         "/api/product/:id": {
-            "post": {
+            "get": {
                 "description": "Register a new user",
                 "consumes": [
                     "application/json"

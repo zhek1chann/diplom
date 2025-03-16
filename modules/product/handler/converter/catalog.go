@@ -40,7 +40,6 @@ func ToServiceProductFromApi(apiProduct *modelApi.Product) *model.Product {
 		Name:         apiProduct.Name,
 		MinPrice:     apiProduct.MinPrice,
 		ImageURL:     apiProduct.ImageURL,
-		GTIN:         apiProduct.GTIN,
 		SupplierInfo: ToServiceSupplierInfoFromAPI(apiProduct.SupplierInfo),
 	}
 }
@@ -51,7 +50,6 @@ func ToAPIProductFromService(serviceProduct *model.Product) *modelApi.Product {
 		Name:         serviceProduct.Name,
 		MinPrice:     serviceProduct.MinPrice,
 		ImageURL:     serviceProduct.ImageURL,
-		GTIN:         serviceProduct.GTIN,
 		SupplierInfo: ToAPISupplierInfoFromService(serviceProduct.SupplierInfo),
 	}
 }

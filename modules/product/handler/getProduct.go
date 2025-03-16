@@ -18,7 +18,7 @@ import (
 // @Param        input body modelApi.ProductInput true "get product info"
 // @Success      201  {object}  modelApi.ProductResponse
 // @Failure      400  {object}  gin.H
-// @Router       /api/product/:id [post]
+// @Router       /api/product/:id [get]
 func (h *CatalogHandler) GetProduct(c *gin.Context) {
 	// TODO: validator
 	var input modelApi.ProductInput

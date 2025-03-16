@@ -9,11 +9,10 @@ type ProductResponse struct {
 }
 
 type Product struct {
-	ID           int64                `json:"id"`
-	Name         string               `json:"name"`
-	MinPrice     int                  `json:"min_price"`
-	ImageURL     string               `json:"image_url"`
-	GTIN         int64                `json:"gtin"`
+	ID           int64               `json:"id"`
+	Name         string              `json:"name"`
+	MinPrice     int                 `json:"min_price"`
+	ImageURL     string              `json:"image_url"`
 	SupplierInfo ProductSupplierInfo `json:"supplier_info"`
 }
 
