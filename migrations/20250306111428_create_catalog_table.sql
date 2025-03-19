@@ -17,6 +17,7 @@ CREATE TABLE users (
 
 CREATE TABLE suppliers (
     user_id INTEGER NOT NULL,
+    
     condition_id INT,
     PRIMARY KEY (user_id),
     FOREIGN KEY (user_id) REFERENCES users (id),

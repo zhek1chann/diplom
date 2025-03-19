@@ -1,7 +1,7 @@
 package card
 
 import (
-	"diploma/modules/card/handler"
+	"diploma/modules/cart/handler"
 
 	"github.com/gin-gonic/gin"
 )
@@ -9,9 +9,9 @@ import (
 func RegisterRoutes(router *gin.RouterGroup, h *handler.CardHandler) {
 	cardRoutes := router.Group("/catalog")
 	{
-		cardRoutes.PUT("/put", h.PutToCard)
-		// cardRoutes.GET("/get", h.GetProduct)
-		// cardRoutes.DELETE ("/delete", h.GetProduct).
+		cardRoutes.PUT("/add", h.AddProductToCard)
+		cardRoutes.GET("/get", h.GetCart)
+		cardRoutes.DELETE("/delete", h.DeleteProductFromCart)
 		// cardRoutes.POST("/chekcout", )
 
 	}

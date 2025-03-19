@@ -24,10 +24,10 @@ const (
 	updatedAtColumn = "updated_at"
 
 	// products_supplier table columns
-	psProductIDColumn   = "product_id"
-	psSupplierIDColumn  = "supplier_id"
-	priceColumn         = "price"
-	minSellAmountColumn = "min_sell_amount"
+	psProductIDColumn  = "product_id"
+	psSupplierIDColumn = "supplier_id"
+	priceColumn        = "price"
+	sellAmountColumn   = "sell_amount"
 )
 
 type repo struct {
@@ -69,7 +69,7 @@ func (r *repo) GetProduct(ctx context.Context, id int64) (*model.Product, error)
 // GetSupplierInfoListByProduct retrieves supplier information for a given product,
 // converts each repository-level supplier info to the domain model.
 func (r *repo) GetSupplierInfoListByProduct(ctx context.Context, id int64) ([]model.ProductSupplierInfo, error) {
-	builder := sq.Select(psSupplierIDColumn, priceColumn, minSellAmountColumn).
+	builder := sq.Select(psSupplierIDColumn, priceColumn, sellAmountColumn).
 		PlaceholderFormat(sq.Dollar).
 		From(productsSupplierTbl).
 		Where(sq.Eq{psProductIDColumn: id})
