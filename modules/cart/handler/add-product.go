@@ -11,10 +11,10 @@ import (
 // Register godoc
 // @Summary      Put product to Card
 // @Description  --
-// @Tags         card
+// @Tags         cart
 // @Accept       json
 // @Produce      json
-// @Param        input body modelApi.PutCardInput true "Put Card input"
+// @Param        input body modelApi.AddProductToCartInput true "Put Card input"
 // @Success      200  {object} gin.H
 // @Failure      400  {object}  modelApi.ErrorResponse
 // @Router       /api/card/put [get]

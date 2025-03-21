@@ -95,6 +95,46 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/card/put": {
+            "get": {
+                "description": "--",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart"
+                ],
+                "summary": "Put product to Card",
+                "parameters": [
+                    {
+                        "description": "Put Card input",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.AddProductToCartInput"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/gin.H"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/product/:id": {
             "get": {
                 "description": "Register a new user",
@@ -110,13 +150,10 @@ const docTemplate = `{
                 "summary": "User registration",
                 "parameters": [
                     {
-                        "description": "get product info",
-                        "name": "input",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/diploma_modules_product_handler_model.ProductInput"
-                        }
+                        "type": "integer",
+                        "description": "product id",
+                        "name": "product_id",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -137,7 +174,7 @@ const docTemplate = `{
         },
         "/api/product/list": {
             "get": {
-                "description": "Register a new user",
+                "description": "Retrieve a list of products with pagination support using limit and offset",
                 "consumes": [
                     "application/json"
                 ],
@@ -147,16 +184,19 @@ const docTemplate = `{
                 "tags": [
                     "product"
                 ],
-                "summary": "User registration",
+                "summary": "Get product list",
                 "parameters": [
                     {
-                        "description": "get product list",
-                        "name": "input",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/diploma_modules_product_handler_model.ProductListInput"
-                        }
+                        "type": "integer",
+                        "description": "Limit number of products",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset for pagination",
+                        "name": "offset",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -170,6 +210,41 @@ const docTemplate = `{
                         "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/gin.H"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "get customer's cart",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart"
+                ],
+                "summary": "Get cart",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "customer ID",
+                        "name": "customer-ID",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.GetCartResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.ErrorResponse"
                         }
                     }
                 }
@@ -231,26 +306,66 @@ const docTemplate = `{
                 }
             }
         },
+        "diploma_modules_cart_handler_model.AddProductToCartInput": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "integer"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "product_id": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "supplier_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_cart_handler_model.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {}
+            }
+        },
+        "diploma_modules_cart_handler_model.GetCartResponse": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "integer"
+                },
+                "suppliers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Supplier"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
         "diploma_modules_product_handler_model.DetailedProduct": {
             "type": "object",
             "properties": {
-                "gtin": {
-                    "type": "integer"
-                },
                 "id": {
                     "type": "integer"
                 },
-                "image_url": {
+                "image": {
                     "type": "string"
-                },
-                "min_price": {
-                    "type": "integer"
                 },
                 "name": {
                     "type": "string"
                 },
-                "supplier_info": {
-                    "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo"
+                "price": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
                 },
                 "suppliers": {
                     "type": "array",
@@ -260,55 +375,13 @@ const docTemplate = `{
                 }
             }
         },
-        "diploma_modules_product_handler_model.Product": {
-            "type": "object",
-            "properties": {
-                "gtin": {
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "integer"
-                },
-                "image_url": {
-                    "type": "string"
-                },
-                "min_price": {
-                    "type": "integer"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "supplier_info": {
-                    "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo"
-                }
-            }
-        },
-        "diploma_modules_product_handler_model.ProductInput": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "diploma_modules_product_handler_model.ProductListInput": {
-            "type": "object",
-            "properties": {
-                "limit": {
-                    "type": "integer"
-                },
-                "offset": {
-                    "type": "integer"
-                }
-            }
-        },
         "diploma_modules_product_handler_model.ProductListResponse": {
             "type": "object",
             "properties": {
                 "product_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/diploma_modules_product_handler_model.Product"
+                        "$ref": "#/definitions/model.Product"
                     }
                 },
                 "total": {
@@ -344,6 +417,55 @@ const docTemplate = `{
         "gin.H": {
             "type": "object",
             "additionalProperties": {}
+        },
+        "model.Product": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.Supplier": {
+            "type": "object",
+            "properties": {
+                "delivery_fee": {
+                    "type": "integer"
+                },
+                "free_delivery_amount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "minOrderAmount": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "product_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/model.Product"
+                    }
+                },
+                "total_amount": {
+                    "type": "integer"
+                }
+            }
         }
     }
 }`

@@ -9,13 +9,13 @@ import (
 )
 
 // Register godoc
-// @Summary      User registration
-// @Description  Register a new user
-// @Tags         product
+// @Summary      Get cart
+// @Description  get customer's cart
+// @Tags         cart
 // @Accept       json
 // @Produce      json
-// @Param        true "get card"
-// @Success      200  {object}  modelApi.GetCardResponse
+// @Param        customer-ID     query     int     false "customer ID"  
+// @Success      200  {object}  modelApi.GetCartResponse
 // @Failure      400  {object}  modelApi.ErrorResponse
 // @Router       /api/product/list [post]
 func (h *CardHandler) GetCart(c *gin.Context) {
@@ -25,7 +25,7 @@ func (h *CardHandler) GetCart(c *gin.Context) {
 		return
 	}
 
-	cart, err := h.service.GetCart(c.Request.Context(), input.UserID)
+	cart, err := h.service.GetCart(c.Request.Context(), input.CustomerID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelApi.ErrorResponse{Err: err})
 		return

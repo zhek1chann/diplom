@@ -7,7 +7,7 @@ import (
 
 func ToServiceCardInputFromAPI(input *modelApi.AddProductToCartInput) *model.PutCartQuery {
 	return &model.PutCartQuery{
-		UserID:     input.UserID,
+		CustomerID: input.CustomerID,
 		ProductID:  input.ProductID,
 		Quantity:   input.Quantity,
 		Price:      input.Price,
@@ -17,9 +17,9 @@ func ToServiceCardInputFromAPI(input *modelApi.AddProductToCartInput) *model.Put
 
 func ToAPIGetCartFromService(card *model.Cart) *modelApi.GetCartResponse {
 	return &modelApi.GetCartResponse{
-		Total:     card.Total,
-		UserID:    card.UserID,
-		Suppliers: ToAPISuppliersFromService(card.Suppliers),
+		Total:      card.Total,
+		CustomerID: card.CustomerID,
+		Suppliers:  ToAPISuppliersFromService(card.Suppliers),
 	}
 }
 

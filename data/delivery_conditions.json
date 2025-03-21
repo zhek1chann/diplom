@@ -1,0 +1,27 @@
+[
+    {
+        "condition_id": 1,
+        "minimum_free_delivery_amount": 0,
+        "delivery_fee": 0
+    },
+    {
+        "condition_id": 2,
+        "minimum_free_delivery_amount": 10000,
+        "delivery_fee": 800
+    },
+    {
+        "condition_id": 3,
+        "minimum_free_delivery_amount": 15000,
+        "delivery_fee": 900
+    },
+    {
+        "condition_id": 4,
+        "minimum_free_delivery_amount": 20000,
+        "delivery_fee": 2000
+    },
+    {
+        "condition_id": 5,
+        "minimum_free_delivery_amount": 17000,
+        "delivery_fee": 1300
+    }
+]

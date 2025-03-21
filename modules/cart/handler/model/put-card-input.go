@@ -5,17 +5,17 @@ type AddProductToCartInput struct {
 	Price      int   `json:"price"`
 	ProductID  int64 `json:"product_id"`
 	SupplierID int64 `json:"supplier_id"`
-	UserID     int64 `json:"user_id"`
+	CustomerID     int64 `json:"customer_id"`
 }
 
 type GetCardInput struct {
-	UserID int64 `json:"user_id"`
+	CustomerID int64 `json:"CustomerID"`
 }
 
 type GetCartResponse struct {
-	Total     int        `json:"total"`
-	UserID    int64      `json:"user_id"`
-	Suppliers []Supplier `json:"suppliers"`
+	Total      int        `json:"total"`
+	CustomerID int64      `json:"customer_id"`
+	Suppliers  []Supplier `json:"suppliers"`
 }
 
 type Supplier struct {

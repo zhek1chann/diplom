@@ -7,7 +7,7 @@ import (
 )
 
 type cartServ struct {
-	repo      ICartRepository
+	cartRepo  ICartRepository
 	txManager db.TxManager
 }
 
@@ -16,11 +16,14 @@ func NewService(
 	txManager db.TxManager,
 ) *cartServ {
 	return &cartServ{
-		repo:      cartRepository,
+		cartRepo:  cartRepository,
 		txManager: txManager,
 	}
 }
 
 type ICartRepository interface {
 	GetCart(ctx context.Context, userID int64) (*model.Cart, error)
+	CreateCart(ctx context.Context, userID int64) (int64, error)
+	AddItem(ctx context.Context, input *model.PutCartQuery) error
+	UpdateCartTotal(ctx context.Context, cartID int64, total int) error
 }
