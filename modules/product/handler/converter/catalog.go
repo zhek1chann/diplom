@@ -19,57 +19,55 @@ func ToApiProductResponeFromService(product *model.DetailedProduct) *modelApi.Pr
 
 func ToApiDetailedProductFromSerivce(dProudct *model.DetailedProduct) *modelApi.DetailedProduct {
 	return &modelApi.DetailedProduct{
-		Product:      ToAPIProductFromService(dProudct.Product),
-		SupplierList: ToApiSupplierListFromService(dProudct.SupplierList),
+		Product:             ToAPIProductFromService(dProudct.Product),
+		ProductSupplierList: ToApiProductSupplierListFromService(dProudct.ProductSupplierList),
 	}
 }
 
-func ToApiSupplierListFromService(supplierList []model.ProductSupplierInfo) []modelApi.ProductSupplierInfo {
-	res := make([]modelApi.ProductSupplierInfo, 0, len(supplierList))
+func ToApiProductSupplierListFromService(productSupplierList []model.ProductSupplier) []modelApi.ProductSupplier {
+	res := make([]modelApi.ProductSupplier, 0, len(productSupplierList))
 
-	for _, s := range supplierList {
-		res = append(res, ToAPISupplierInfoFromService(s))
+	for _, ps := range productSupplierList {
+		res = append(res, ToAPIProductSupplierFromService(ps))
 	}
 
 	return res
 }
 
-func ToServiceProductFromApi(apiProduct *modelApi.Product) *model.Product {
-	return &model.Product{
-		ID:           apiProduct.ID,
-		Name:         apiProduct.Name,
-		MinPrice:     apiProduct.MinPrice,
-		ImageURL:     apiProduct.ImageURL,
-		SupplierInfo: ToServiceSupplierInfoFromAPI(apiProduct.SupplierInfo),
-	}
-}
-
-func ToAPIProductFromService(serviceProduct *model.Product) *modelApi.Product {
+func ToAPIProductFromService(product *model.Product) *modelApi.Product {
 	return &modelApi.Product{
-		ID:           serviceProduct.ID,
-		Name:         serviceProduct.Name,
-		MinPrice:     serviceProduct.MinPrice,
-		ImageURL:     serviceProduct.ImageURL,
-		SupplierInfo: ToAPISupplierInfoFromService(serviceProduct.SupplierInfo),
-	}
-}
-
-// ConvertAPIToServiceSupplierInfo преобразует информацию о поставщике из API в сервис.
-func ToServiceSupplierInfoFromAPI(apiSupplierInfo modelApi.ProductSupplierInfo) model.ProductSupplierInfo {
-	return model.ProductSupplierInfo{
-		SupplierID:                apiSupplierInfo.SupplierID,
-		Name:                      apiSupplierInfo.Name,
-		MinimumFreeDeliveryAmount: apiSupplierInfo.MinimumFreeDeliveryAmount,
-		DeliveryFee:               apiSupplierInfo.DeliveryFee,
+		ID:                    product.ID,
+		Name:                  product.Name,
+		ImageUrl:              product.ImageUrl,
+		LowestProductSupplier: ToAPIProductSupplierFromService(product.LowestProductSupplier),
 	}
 }
 
 // ConvertServiceToAPISuppSlierInfo преобразует информацию о поставщике из сервиса в API.
-func ToAPISupplierInfoFromService(serviceSupplierInfo model.ProductSupplierInfo) modelApi.ProductSupplierInfo {
-	return modelApi.ProductSupplierInfo{
-		SupplierID:                serviceSupplierInfo.SupplierID,
-		Name:                      serviceSupplierInfo.Name,
-		MinimumFreeDeliveryAmount: serviceSupplierInfo.MinimumFreeDeliveryAmount,
-		DeliveryFee:               serviceSupplierInfo.DeliveryFee,
+func ToAPIProductSupplierFromService(ps model.ProductSupplier) modelApi.ProductSupplier {
+	return modelApi.ProductSupplier{
+		Price:      ps.Price,
+		SellAmount: ps.SellAmount,
+		Supplier:   ToAPISupplierFromService(ps.Supplier),
 	}
 }
+
+func ToAPISupplierFromService(supplier model.Supplier) modelApi.Supplier {
+	return modelApi.Supplier{
+		ID:                 supplier.ID,
+		Name:               supplier.Name,
+		OrderAmount:        supplier.OrderAmount,
+		FreeDeliveryAmount: supplier.FreeDeliveryAmount,
+		DeliveryFee:        supplier.DeliveryFee,
+	}
+}
+
+// ConvertAPIToServiceSupplierInfo преобразует информацию о поставщике из API в сервис.
+// func ToServiceSupplierInfoFromAPI(apiSupplierInfo modelApi.ProductSupplierInfo) model.ProductSupplierInfo {
+// 	return model.ProductSupplierInfo{
+// 		SupplierID:                apiSupplierInfo.SupplierID,
+// 		Name:                      apiSupplierInfo.Name,
+// 		MinimumFreeDeliveryAmount: apiSupplierInfo.MinimumFreeDeliveryAmount,
+// 		DeliveryFee:               apiSupplierInfo.DeliveryFee,
+// 	}
+// }

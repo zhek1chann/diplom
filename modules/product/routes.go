@@ -7,11 +7,11 @@ import (
 )
 
 func RegisterRoutes(router *gin.RouterGroup, h *handler.CatalogHandler) {
-	catalogRoutes := router.Group("/catalog")
+	catalogRoutes := router.Group("product")
 	{
-		catalogRoutes.GET("/product/list", h.GetProductList)
+		catalogRoutes.GET("/list", h.GetProductList)
 
-		catalogRoutes.GET("/product/:id", h.GetProduct)
+		catalogRoutes.GET("/:id", h.GetProduct)
 
 		// catalogRoutes.GET("/product/pages", h.GetPageCount)
 

@@ -21,13 +21,3 @@ func (s *productServ) ProductList(ctx context.Context, query *model.ProductListQ
 		Total:    total,
 	}, err
 }
-
-func (s *productServ) PageCount(ctx context.Context, query *model.PageCountQuery) (*model.PageCount, error) {
-	total, err := s.productRepository.GetTotalProducts(ctx)
-
-	if err != nil {
-		return nil, err
-	}
-	pages := total / query.PageSize
-	return &model.PageCount{Pages: pages}, nil
-}

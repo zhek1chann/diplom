@@ -23,7 +23,7 @@ func NewService(
 
 type IProductRepository interface {
 	GetProduct(ctx context.Context, id int64) (*model.Product, error)
-	GetSupplierInfoListByProduct(ctx context.Context, id int64) ([]model.ProductSupplierInfo, error)
+	GetSupplierProductListByProduct(ctx context.Context, id int64) ([]model.ProductSupplier, error)
 	GetProductList(ctx context.Context, query *model.ProductListQuery) ([]model.Product, error)
 	GetTotalProducts(ctx context.Context) (int, error)
 }

@@ -12,15 +12,15 @@ func (s *productServ) Product(ctx context.Context, query *model.ProductQuery) (*
 		return nil, err
 	}
 
-	supplierList, err := s.productRepository.GetSupplierInfoListByProduct(ctx, query.ID)
+	productSupplierList, err := s.productRepository.GetSupplierProductListByProduct(ctx, query.ID)
 
 	if err != nil {
 		return nil, err
 	}
 
 	return &model.DetailedProduct{
-		Product:      product,
-		SupplierList: supplierList,
+		Product:             product,
+		ProductSupplierList: productSupplierList,
 	}, err
 
 }

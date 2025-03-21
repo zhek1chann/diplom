@@ -1,8 +1,10 @@
 package model
 
+import "time"
+
 type ProductListQuery struct {
-	Offset   int
-	Limit int
+	Offset int
+	Limit  int
 }
 
 type ProductList struct {
@@ -14,23 +16,31 @@ type ProductQuery struct {
 	ID int64
 }
 
-type Product struct {
-	ID           int64
-	Name         string
-	MinPrice     int
-	ImageURL     string
-	GTIN         int64
-	SupplierInfo ProductSupplierInfo
-}
-
 type DetailedProduct struct {
 	*Product
-	SupplierList []ProductSupplierInfo
+	ProductSupplierList []ProductSupplier
 }
 
-type ProductSupplierInfo struct {
-	SupplierID                int64
-	Name                      string
-	MinimumFreeDeliveryAmount float64
-	DeliveryFee               float64
+type Product struct {
+	ID             int64
+	GTIN           int64
+	Name           string
+	ImageUrl       string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	LowestProductSupplier ProductSupplier
+}
+
+type ProductSupplier struct {
+	Price      int
+	SellAmount int
+	Supplier   Supplier
+}
+
+type Supplier struct {
+	ID                 int64
+	Name               string
+	OrderAmount        int
+	FreeDeliveryAmount int
+	DeliveryFee        int
 }

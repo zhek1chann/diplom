@@ -16,27 +16,27 @@ services:
       - postgres_volume:/var/lib/postgresql/data
     networks:
       - diplom-net
-#  migrator:
-#    build:
-#      context: .
-#      dockerfile: migration.Dockerfile
-#    restart: on-failure
-#    environment:
-#      DB_HOST: db
-#    networks:
-#      - diplom-net
-  app:  
-    image: diploma-server:${TAG_NAME}
-    ports:
-      - "8080:8080"
-    volumes:
-      - "./.env:/root/.env"
-    depends_on:
-      - pg
+  migrator:
+    build:
+      context: .
+      dockerfile: migration.Dockerfile
+    restart: on-failure
+    environment:
+      DB_HOST: db
     networks:
       - diplom-net
-    env_file:
-      - .env
+  # app:  
+  #   image: diploma-server:${TAG_NAME}
+  #   ports:
+  #     - "8080:8080"
+  #   volumes:
+  #     - "./.env:/root/.env"
+  #   depends_on:
+  #     - pg
+  #   networks:
+  #     - diplom-net
+  #   env_file:
+  #     - .env
 
 networks:
   diplom-net:
