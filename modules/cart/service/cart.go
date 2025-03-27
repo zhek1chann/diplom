@@ -6,42 +6,56 @@ import (
 	"errors"
 )
 
-type ICardService interface {
-	GetCart(ctx context.Context, userID int64) (*model.Cart, error)
-	AddProductToCard(ctx context.Context, input *model.PutCartQuery) error
-	DeleteProductFromCart(ctx context.Context, input *model.DeleteProductQuery) error
-}
-
-func (s *cartServ) AddProductToCard(ctx context.Context, input *model.PutCartQuery) error {
+func (s *cartServ) AddProductToCard(ctx context.Context, query *model.PutCartQuery) error {
 	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
-		cart, errTx := s.cartRepo.GetCart(ctx, input.CustomerID)
+		cart, errTx := s.cartRepo.GetCart(ctx, query.CustomerID)
+
 		if errTx != nil {
 			if errors.Is(errTx, model.ErrNoRows) {
-				id, errTx := s.cartRepo.CreateCart(ctx, input.CustomerID)
+				id, errTx := s.cartRepo.CreateCart(ctx, query.CustomerID)
 				if errTx != nil {
 					return errTx
 				}
 				cart = &model.Cart{
 					ID:    id,
-					Total: 0}
+					Total: 0,
+				}
 			} else {
 				return errTx
 
 			}
-			input.CartID = cart.CustomerID
-			errTx = s.cartRepo.AddItem(ctx, input)
-			if errTx != nil {
-				return errTx
-			}
-
-			cart.Total += input.Quantity * input.Price
-			errTx = s.cartRepo.UpdateCartTotal(ctx, cart.ID, cart.Total)
-			if errTx != nil {
-				return errTx
-			}
-			return nil
+			query.CartID = cart.CustomerID
+		}
+		query.Price, errTx = s.productService.GetProductPriceBySupplier(ctx, query.ProductID, query.SupplierID)
+		if errTx != nil {
+			return errTx
 		}
 
+		itemQuantity, errTx := s.cartRepo.ItemQuantity(ctx, query.CartID, query.ProductID, query.SupplierID)
+
+		if errTx != nil {
+			if errors.Is(errTx, model.ErrNoRows) {
+				errTx = s.cartRepo.AddItem(ctx, query)
+				if errTx != nil {
+					return errTx
+				}
+			} else {
+				return errTx
+			}
+		} else {
+
+			errTx = s.cartRepo.UpdateItemQuantity(ctx, query.CartID, query.ProductID, query.SupplierID, itemQuantity+query.Quantity)
+			if errTx != nil {
+				return errTx
+			}
+		}
+
+		cart.Total += query.Price * query.Quantity
+		// fmt.Println(cart)
+		// errTx = s.cartRepo.UpdateCartTotal(ctx, cart.ID, cart.Total)
+		// if errTx != nil {
+		// 	return errTx
+		// }
 		return nil
 	})
 	if err != nil {

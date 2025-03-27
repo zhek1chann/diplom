@@ -2,10 +2,9 @@ package model
 
 type AddProductToCartInput struct {
 	Quantity   int   `json:"quantity"`
-	Price      int   `json:"price"`
 	ProductID  int64 `json:"product_id"`
 	SupplierID int64 `json:"supplier_id"`
-	CustomerID     int64 `json:"customer_id"`
+	CustomerID int64
 }
 
 type GetCardInput struct {

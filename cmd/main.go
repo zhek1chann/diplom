@@ -6,6 +6,18 @@ import (
 	"log"
 )
 
+// @title Go JWT Swagger Example API
+// @description This is a sample server with JWT authorization.
+// @version 1.0
+
+// @host localhost:8080
+// @BasePath /
+// @SecurityDefinitions.bearer
+
+// @securityDefinitions.apikey ApiKeyAuth
+// @in header
+// @name Authorization
+
 func main() {
 	ctx := context.Background()
 

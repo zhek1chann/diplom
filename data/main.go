@@ -165,7 +165,7 @@ func main() {
 	// Suppliers
 	suppliers := []Supplier{}
 	loadJSON("suppliers.json", &suppliers)
-	fmt.Println("Suppliers")
+	// fmt.Println("Suppliers")
 	// insertSupplier(db, suppliers)
 
 	// // Products

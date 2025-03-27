@@ -1,8 +1,13 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "This is a sample server with JWT authorization.",
+        "title": "Go JWT Swagger Example API",
+        "contact": {},
+        "version": "1.0"
     },
+    "host": "localhost:8080",
+    "basePath": "/",
     "paths": {
         "/api/auth/login": {
             "post": {
@@ -84,8 +89,13 @@
                 }
             }
         },
-        "/api/card/put": {
-            "get": {
+        "/api/cart/add": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "--",
                 "consumes": [
                     "application/json"
@@ -202,41 +212,6 @@
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "get customer's cart",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cart"
-                ],
-                "summary": "Get cart",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "customer ID",
-                        "name": "customer-ID",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/diploma_modules_cart_handler_model.GetCartResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/diploma_modules_cart_handler_model.ErrorResponse"
-                        }
-                    }
-                }
             }
         }
     },
@@ -298,7 +273,7 @@
         "diploma_modules_cart_handler_model.AddProductToCartInput": {
             "type": "object",
             "properties": {
-                "customer_id": {
+                "customerID": {
                     "type": "integer"
                 },
                 "price": {
@@ -321,46 +296,34 @@
                 "error": {}
             }
         },
-        "diploma_modules_cart_handler_model.GetCartResponse": {
+        "diploma_modules_product_handler_model.DetailedProduct": {
             "type": "object",
             "properties": {
-                "customer_id": {
-                    "type": "integer"
+                "product": {
+                    "$ref": "#/definitions/diploma_modules_product_handler_model.Product"
                 },
                 "suppliers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Supplier"
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplier"
                     }
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
-        "diploma_modules_product_handler_model.DetailedProduct": {
+        "diploma_modules_product_handler_model.Product": {
             "type": "object",
             "properties": {
                 "id": {
                     "type": "integer"
                 },
-                "image": {
+                "imageUrl": {
                     "type": "string"
+                },
+                "lowest_product_supplier": {
+                    "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplier"
                 },
                 "name": {
                     "type": "string"
-                },
-                "price": {
-                    "type": "integer"
-                },
-                "quantity": {
-                    "type": "integer"
-                },
-                "suppliers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo"
-                    }
                 }
             }
         },
@@ -370,7 +333,7 @@
                 "product_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Product"
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.Product"
                     }
                 },
                 "total": {
@@ -386,48 +349,21 @@
                 }
             }
         },
-        "diploma_modules_product_handler_model.ProductSupplierInfo": {
+        "diploma_modules_product_handler_model.ProductSupplier": {
             "type": "object",
             "properties": {
-                "delivery_fee": {
-                    "type": "number"
-                },
-                "minimum_free_delivery_amount": {
-                    "type": "number"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "supplier_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "gin.H": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "model.Product": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "image": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
                 "price": {
                     "type": "integer"
                 },
-                "quantity": {
+                "sell_amount": {
                     "type": "integer"
+                },
+                "supplier": {
+                    "$ref": "#/definitions/diploma_modules_product_handler_model.Supplier"
                 }
             }
         },
-        "model.Supplier": {
+        "diploma_modules_product_handler_model.Supplier": {
             "type": "object",
             "properties": {
                 "delivery_fee": {
@@ -439,22 +375,24 @@
                 "id": {
                     "type": "integer"
                 },
-                "minOrderAmount": {
-                    "type": "integer"
-                },
                 "name": {
                     "type": "string"
                 },
-                "product_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Product"
-                    }
-                },
-                "total_amount": {
+                "order_amount": {
                     "type": "integer"
                 }
             }
+        },
+        "gin.H": {
+            "type": "object",
+            "additionalProperties": {}
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }

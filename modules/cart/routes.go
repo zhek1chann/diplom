@@ -1,4 +1,4 @@
-package card
+package cart
 
 import (
 	"diploma/modules/cart/handler"
@@ -6,12 +6,12 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func RegisterRoutes(router *gin.RouterGroup, h *handler.CardHandler) {
-	cardRoutes := router.Group("/catalog")
+func RegisterRoutes(router *gin.RouterGroup, h *handler.CartHandler) {
+	cardRoutes := router.Group("/cart")
 	{
-		cardRoutes.PUT("/add", h.AddProductToCard)
-		cardRoutes.GET("/get", h.GetCart)
-		cardRoutes.DELETE("/delete", h.DeleteProductFromCart)
+		cardRoutes.POST("/add", h.AddProductToCard)
+		// cardRoutes.GET("/get", h.GetCart)
+		// cardRoutes.DELETE("/delete", h.DeleteProductFromCart)
 		// cardRoutes.POST("/chekcout", )
 
 	}

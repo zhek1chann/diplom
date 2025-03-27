@@ -10,7 +10,6 @@ func ToServiceCardInputFromAPI(input *modelApi.AddProductToCartInput) *model.Put
 		CustomerID: input.CustomerID,
 		ProductID:  input.ProductID,
 		Quantity:   input.Quantity,
-		Price:      input.Price,
 		SupplierID: input.SupplierID,
 	}
 }
