@@ -37,12 +37,13 @@ definitions:
         example: 1
         type: integer
     type: object
+  diploma_modules_cart_handler_model.AddProductToCardResponse:
+    properties:
+      status:
+        type: string
+    type: object
   diploma_modules_cart_handler_model.AddProductToCartInput:
     properties:
-      customerID:
-        type: integer
-      price:
-        type: integer
       product_id:
         type: integer
       quantity:
@@ -53,6 +54,49 @@ definitions:
   diploma_modules_cart_handler_model.ErrorResponse:
     properties:
       error: {}
+    type: object
+  diploma_modules_cart_handler_model.GetCartResponse:
+    properties:
+      customer_id:
+        type: integer
+      suppliers:
+        items:
+          $ref: '#/definitions/diploma_modules_cart_handler_model.Supplier'
+        type: array
+      total:
+        type: integer
+    type: object
+  diploma_modules_cart_handler_model.Product:
+    properties:
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+      quantity:
+        type: integer
+    type: object
+  diploma_modules_cart_handler_model.Supplier:
+    properties:
+      delivery_fee:
+        type: integer
+      free_delivery_amount:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      orderAmount:
+        type: integer
+      product_list:
+        items:
+          $ref: '#/definitions/diploma_modules_cart_handler_model.Product'
+        type: array
+      total_amount:
+        type: integer
     type: object
   diploma_modules_product_handler_model.DetailedProduct:
     properties:
@@ -172,6 +216,27 @@ paths:
       summary: User registration
       tags:
       - auth
+  /api/cart:
+    get:
+      consumes:
+      - application/json
+      description: --
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_cart_handler_model.GetCartResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/diploma_modules_cart_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: get cart
+      tags:
+      - cart
   /api/cart/add:
     post:
       consumes:
@@ -190,7 +255,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/gin.H'
+            $ref: '#/definitions/diploma_modules_cart_handler_model.AddProductToCardResponse'
         "400":
           description: Bad Request
           schema:

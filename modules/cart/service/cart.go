@@ -8,7 +8,7 @@ import (
 
 func (s *cartServ) AddProductToCard(ctx context.Context, query *model.PutCartQuery) error {
 	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
-		cart, errTx := s.cartRepo.GetCart(ctx, query.CustomerID)
+		cart, errTx := s.cartRepo.Cart(ctx, query.CustomerID)
 
 		if errTx != nil {
 			if errors.Is(errTx, model.ErrNoRows) {
@@ -24,9 +24,10 @@ func (s *cartServ) AddProductToCard(ctx context.Context, query *model.PutCartQue
 				return errTx
 
 			}
-			query.CartID = cart.CustomerID
 		}
-		query.Price, errTx = s.productService.GetProductPriceBySupplier(ctx, query.ProductID, query.SupplierID)
+		query.CartID = cart.ID
+
+		query.Price, errTx = s.productService.ProductPriceBySupplier(ctx, query.ProductID, query.SupplierID)
 		if errTx != nil {
 			return errTx
 		}
@@ -51,11 +52,10 @@ func (s *cartServ) AddProductToCard(ctx context.Context, query *model.PutCartQue
 		}
 
 		cart.Total += query.Price * query.Quantity
-		// fmt.Println(cart)
-		// errTx = s.cartRepo.UpdateCartTotal(ctx, cart.ID, cart.Total)
-		// if errTx != nil {
-		// 	return errTx
-		// }
+		errTx = s.cartRepo.UpdateCartTotal(ctx, cart.ID, cart.Total)
+		if errTx != nil {
+			return errTx
+		}
 		return nil
 	})
 	if err != nil {
@@ -64,20 +64,57 @@ func (s *cartServ) AddProductToCard(ctx context.Context, query *model.PutCartQue
 	return nil
 }
 
-func (s *cartServ) GetCart(ctx context.Context, userID int64) (*model.Cart, error) {
+func (s *cartServ) Cart(ctx context.Context, userID int64) (*model.Cart, error) {
 	var err error
 	var cart *model.Cart
 	err = s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
 		var errTx error
-		cart, errTx = s.cartRepo.GetCart(ctx, userID)
+		cart, errTx = s.cartRepo.Cart(ctx, userID)
+		if errTx != nil {
+			if errors.Is(errTx, model.ErrNoRows) {
+				return model.ErrNoRows
+			}
+			return errTx
+		}
+		cart.Suppliers, errTx = s.cartRepo.GetCartItems(ctx, cart.ID)
+		if errTx != nil {
+			if errors.Is(errTx, model.ErrNoRows) {
+				return model.ErrNoRows
+			}
+			return errTx
+		}
+
+		supplierIdList := make([]int64, 0, len(cart.Suppliers))
+		for _, supplier := range cart.Suppliers {
+			supplierIdList = append(supplierIdList, supplier.ID)
+		}
+
+		suppliers, errTx := s.supplierService.SupplierListByIDList(ctx, supplierIdList)
 		if errTx != nil {
 			return errTx
 		}
 
+		for i, supplier := range suppliers {
+			cart.Suppliers[i].Name = supplier.Name
+			cart.Suppliers[i].OrderAmount = supplier.OrderAmount
+			cart.Suppliers[i].FreeDeliveryAmount = supplier.FreeDeliveryAmount
+			cart.Suppliers[i].DeliveryFee = supplier.DeliveryFee
+			cart.Suppliers[i].TotalAmount = getTotalSupplier(ctx, cart.Suppliers[i].ProductList)
+
+		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
+
 	return cart, nil
+}
+
+func getTotalSupplier(ctx context.Context, products []model.Product) int {
+	total := 0
+	for _, product := range products {
+		total += product.Price * product.Quantity
+	}
+	return total
 }

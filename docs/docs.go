@@ -95,6 +95,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/cart": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "--",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart"
+                ],
+                "summary": "get cart",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.GetCartResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/cart/add": {
             "post": {
                 "security": [
@@ -128,7 +162,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.AddProductToCardResponse"
                         }
                     },
                     "400": {
@@ -276,15 +310,17 @@ const docTemplate = `{
                 }
             }
         },
+        "diploma_modules_cart_handler_model.AddProductToCardResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "diploma_modules_cart_handler_model.AddProductToCartInput": {
             "type": "object",
             "properties": {
-                "customerID": {
-                    "type": "integer"
-                },
-                "price": {
-                    "type": "integer"
-                },
                 "product_id": {
                     "type": "integer"
                 },
@@ -300,6 +336,72 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {}
+            }
+        },
+        "diploma_modules_cart_handler_model.GetCartResponse": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "integer"
+                },
+                "suppliers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_cart_handler_model.Supplier"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_cart_handler_model.Product": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_cart_handler_model.Supplier": {
+            "type": "object",
+            "properties": {
+                "delivery_fee": {
+                    "type": "integer"
+                },
+                "free_delivery_amount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "orderAmount": {
+                    "type": "integer"
+                },
+                "product_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_cart_handler_model.Product"
+                    }
+                },
+                "total_amount": {
+                    "type": "integer"
+                }
             }
         },
         "diploma_modules_product_handler_model.DetailedProduct": {

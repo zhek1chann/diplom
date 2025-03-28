@@ -17,7 +17,7 @@ type Cart struct {
 }
 
 type Supplier struct {
-	MinOrderAmount     int
+	OrderAmount        int
 	TotalAmount        int
 	FreeDeliveryAmount int
 	DeliveryFee        int
@@ -31,7 +31,7 @@ type Product struct {
 	Quantity int
 	ID       int64
 	Name     string
-	Image    string
+	ImageUrl string
 }
 
 type DeleteProductQuery struct {

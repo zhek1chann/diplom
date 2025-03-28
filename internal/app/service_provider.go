@@ -21,9 +21,13 @@ import (
 	productRepository "diploma/modules/product/repository/product"
 	productService "diploma/modules/product/service"
 
+	cartSupplierAdapter "diploma/modules/cart/adapter/supplier"
 	cartApi "diploma/modules/cart/handler"
 	cartRepository "diploma/modules/cart/repository"
 	cartService "diploma/modules/cart/service"
+
+	supplierRepository "diploma/modules/supplier/repo"
+	supplierService "diploma/modules/supplier/service"
 )
 
 type serviceProvider struct {
@@ -49,10 +53,14 @@ type serviceProvider struct {
 	productHanlder    *productApi.CatalogHandler
 
 	// cart
+	cartSupplierAdapter cartService.ISupplierAdapter
+	cartRepository      cartService.ICartRepository
+	cartService         cartApi.ICartService
+	cartHanlder         *cartApi.CartHandler
 
-	cartRepository cartService.ICartRepository
-	cartService    cartApi.ICartService
-	cartHanlder    *cartApi.CartHandler
+	// supplier
+	supplierRepository supplierService.ISupplierRepository
+	supplierService    *supplierService.SupplierService
 }
 
 func newServiceProvider() *serviceProvider {
@@ -205,6 +213,24 @@ func (s *serviceProvider) ProductHandler(ctx context.Context) *productApi.Catalo
 	return s.productHanlder
 }
 
+// ========= suppliers =========
+
+func (s *serviceProvider) SupplierRepo(ctx context.Context) supplierService.ISupplierRepository {
+	if s.supplierRepository == nil {
+		s.supplierRepository = supplierRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.supplierRepository
+}
+
+func (s *serviceProvider) SupplierService(ctx context.Context) *supplierService.SupplierService {
+	if s.supplierService == nil {
+		s.supplierService = supplierService.NewService(s.SupplierRepo(ctx), s.TxManager(ctx))
+	}
+
+	return s.supplierService
+}
+
 // ========= cart =========
 
 func (s *serviceProvider) CartRepo(ctx context.Context) cartService.ICartRepository {
@@ -216,9 +242,17 @@ func (s *serviceProvider) CartRepo(ctx context.Context) cartService.ICartReposit
 
 }
 
+func (s *serviceProvider) CartSupplierAdapter(ctx context.Context) cartService.ISupplierAdapter {
+	if s.cartSupplierAdapter == nil {
+		s.cartSupplierAdapter = cartSupplierAdapter.NewAdapter(s.SupplierService(ctx))
+	}
+
+	return s.cartSupplierAdapter
+}
+
 func (s *serviceProvider) CartService(ctx context.Context) cartApi.ICartService {
 	if s.cartService == nil {
-		s.cartService = cartService.NewService(s.CartRepo(ctx), s.ProductService(ctx), s.TxManager(ctx))
+		s.cartService = cartService.NewService(s.CartRepo(ctx), s.ProductService(ctx), s.CartSupplierAdapter(ctx), s.TxManager(ctx))
 	}
 
 	return s.cartService

@@ -28,7 +28,7 @@ func ToAPISuppliersFromService(suppliers []model.Supplier) []modelApi.Supplier {
 		apiSuppliers[i] = modelApi.Supplier{
 			ID:                 supplier.ID,
 			Name:               supplier.Name,
-			MinOrderAmount:     supplier.MinOrderAmount,
+			OrderAmount:        supplier.OrderAmount,
 			TotalAmount:        supplier.TotalAmount,
 			FreeDeliveryAmount: supplier.FreeDeliveryAmount,
 			DeliveryFee:        supplier.DeliveryFee,
@@ -46,7 +46,7 @@ func ToAPIProductsFromService(products []model.Product) []modelApi.Product {
 			Name:     product.Name,
 			Price:    product.Price,
 			Quantity: product.Quantity,
-			Image:    product.Image,
+			ImageUrl:    product.ImageUrl,
 		}
 	}
 	return apiProducts
