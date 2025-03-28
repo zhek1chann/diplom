@@ -6,8 +6,6 @@
         "contact": {},
         "version": "1.0"
     },
-    "host": "localhost:8080",
-    "basePath": "/",
     "paths": {
         "/api/auth/login": {
             "post": {
@@ -329,7 +327,9 @@
         "diploma_modules_cart_handler_model.ErrorResponse": {
             "type": "object",
             "properties": {
-                "error": {}
+                "error": {
+                    "type": "string"
+                }
             }
         },
         "diploma_modules_cart_handler_model.GetCartResponse": {

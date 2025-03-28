@@ -335,7 +335,9 @@ const docTemplate = `{
         "diploma_modules_cart_handler_model.ErrorResponse": {
             "type": "object",
             "properties": {
-                "error": {}
+                "error": {
+                    "type": "string"
+                }
             }
         },
         "diploma_modules_cart_handler_model.GetCartResponse": {
@@ -508,8 +510,8 @@ const docTemplate = `{
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
 	Version:          "1.0",
-	Host:             "localhost:8080",
-	BasePath:         "/",
+	Host:             "",
+	BasePath:         "",
 	Schemes:          []string{},
 	Title:            "Go JWT Swagger Example API",
 	Description:      "This is a sample server with JWT authorization.",

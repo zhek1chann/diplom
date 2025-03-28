@@ -10,8 +10,6 @@ import (
 // @description This is a sample server with JWT authorization.
 // @version 1.0
 
-// @host localhost:8080
-// @BasePath /
 // @SecurityDefinitions.bearer
 
 // @securityDefinitions.apikey ApiKeyAuth
