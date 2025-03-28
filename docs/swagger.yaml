@@ -1,3 +1,4 @@
+basePath: /
 definitions:
   diploma_modules_auth_handler_model.LoginInput:
     properties:
@@ -36,12 +37,13 @@ definitions:
         example: 1
         type: integer
     type: object
+  diploma_modules_cart_handler_model.AddProductToCardResponse:
+    properties:
+      status:
+        type: string
+    type: object
   diploma_modules_cart_handler_model.AddProductToCartInput:
     properties:
-      customer_id:
-        type: integer
-      price:
-        type: integer
       product_id:
         type: integer
       quantity:
@@ -59,12 +61,12 @@ definitions:
         type: integer
       suppliers:
         items:
-          $ref: '#/definitions/model.Supplier'
+          $ref: '#/definitions/diploma_modules_cart_handler_model.Supplier'
         type: array
       total:
         type: integer
     type: object
-  diploma_modules_product_handler_model.DetailedProduct:
+  diploma_modules_cart_handler_model.Product:
     properties:
       id:
         type: integer
@@ -76,16 +78,51 @@ definitions:
         type: integer
       quantity:
         type: integer
+    type: object
+  diploma_modules_cart_handler_model.Supplier:
+    properties:
+      delivery_fee:
+        type: integer
+      free_delivery_amount:
+        type: integer
+      id:
+        type: integer
+      name:
+        type: string
+      orderAmount:
+        type: integer
+      product_list:
+        items:
+          $ref: '#/definitions/diploma_modules_cart_handler_model.Product'
+        type: array
+      total_amount:
+        type: integer
+    type: object
+  diploma_modules_product_handler_model.DetailedProduct:
+    properties:
+      product:
+        $ref: '#/definitions/diploma_modules_product_handler_model.Product'
       suppliers:
         items:
-          $ref: '#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo'
+          $ref: '#/definitions/diploma_modules_product_handler_model.ProductSupplier'
         type: array
+    type: object
+  diploma_modules_product_handler_model.Product:
+    properties:
+      id:
+        type: integer
+      imageUrl:
+        type: string
+      lowest_product_supplier:
+        $ref: '#/definitions/diploma_modules_product_handler_model.ProductSupplier'
+      name:
+        type: string
     type: object
   diploma_modules_product_handler_model.ProductListResponse:
     properties:
       product_list:
         items:
-          $ref: '#/definitions/model.Product'
+          $ref: '#/definitions/diploma_modules_product_handler_model.Product'
         type: array
       total:
         type: integer
@@ -95,34 +132,16 @@ definitions:
       product:
         $ref: '#/definitions/diploma_modules_product_handler_model.DetailedProduct'
     type: object
-  diploma_modules_product_handler_model.ProductSupplierInfo:
+  diploma_modules_product_handler_model.ProductSupplier:
     properties:
-      delivery_fee:
-        type: number
-      minimum_free_delivery_amount:
-        type: number
-      name:
-        type: string
-      supplier_id:
-        type: integer
-    type: object
-  gin.H:
-    additionalProperties: {}
-    type: object
-  model.Product:
-    properties:
-      id:
-        type: integer
-      image:
-        type: string
-      name:
-        type: string
       price:
         type: integer
-      quantity:
+      sell_amount:
         type: integer
+      supplier:
+        $ref: '#/definitions/diploma_modules_product_handler_model.Supplier'
     type: object
-  model.Supplier:
+  diploma_modules_product_handler_model.Supplier:
     properties:
       delivery_fee:
         type: integer
@@ -130,19 +149,20 @@ definitions:
         type: integer
       id:
         type: integer
-      minOrderAmount:
-        type: integer
       name:
         type: string
-      product_list:
-        items:
-          $ref: '#/definitions/model.Product'
-        type: array
-      total_amount:
+      order_amount:
         type: integer
     type: object
+  gin.H:
+    additionalProperties: {}
+    type: object
+host: localhost:8080
 info:
   contact: {}
+  description: This is a sample server with JWT authorization.
+  title: Go JWT Swagger Example API
+  version: "1.0"
 paths:
   /api/auth/login:
     post:
@@ -196,8 +216,29 @@ paths:
       summary: User registration
       tags:
       - auth
-  /api/card/put:
+  /api/cart:
     get:
+      consumes:
+      - application/json
+      description: --
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_cart_handler_model.GetCartResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/diploma_modules_cart_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: get cart
+      tags:
+      - cart
+  /api/cart/add:
+    post:
       consumes:
       - application/json
       description: --
@@ -214,11 +255,13 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/gin.H'
+            $ref: '#/definitions/diploma_modules_cart_handler_model.AddProductToCardResponse'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/diploma_modules_cart_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
       summary: Put product to Card
       tags:
       - cart
@@ -275,27 +318,9 @@ paths:
       summary: Get product list
       tags:
       - product
-    post:
-      consumes:
-      - application/json
-      description: get customer's cart
-      parameters:
-      - description: customer ID
-        in: query
-        name: customer-ID
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/diploma_modules_cart_handler_model.GetCartResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/diploma_modules_cart_handler_model.ErrorResponse'
-      summary: Get cart
-      tags:
-      - cart
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

@@ -11,15 +11,23 @@ import (
 	"diploma/pkg/client/db/transaction"
 	"diploma/pkg/closer"
 
-	"diploma/modules/auth/jwt"
-
 	authApi "diploma/modules/auth/handler"
+	authJWT "diploma/modules/auth/jwt"
+	authMiddlware "diploma/modules/auth/middleware"
 	userRepository "diploma/modules/auth/repository/user"
 	authService "diploma/modules/auth/service/auth"
 
 	productApi "diploma/modules/product/handler"
 	productRepository "diploma/modules/product/repository/product"
 	productService "diploma/modules/product/service"
+
+	cartSupplierAdapter "diploma/modules/cart/adapter/supplier"
+	cartApi "diploma/modules/cart/handler"
+	cartRepository "diploma/modules/cart/repository"
+	cartService "diploma/modules/cart/service"
+
+	supplierRepository "diploma/modules/supplier/repo"
+	supplierService "diploma/modules/supplier/service"
 )
 
 type serviceProvider struct {
@@ -33,15 +41,26 @@ type serviceProvider struct {
 
 	// auth
 	authRepository authService.IAuthRepository
-	jwt            authService.IJWT
+	authJWT        *authJWT.JSONWebToken
 	authService    authApi.IAuthService
 	authHanlder    *authApi.AuthHandler
+	authMiddlware  *authMiddlware.AuthMiddleware
 
 	// product
 
 	productRepository productService.IProductRepository
-	productService    productApi.IProductService
+	productService    *productService.ProductService
 	productHanlder    *productApi.CatalogHandler
+
+	// cart
+	cartSupplierAdapter cartService.ISupplierAdapter
+	cartRepository      cartService.ICartRepository
+	cartService         cartApi.ICartService
+	cartHanlder         *cartApi.CartHandler
+
+	// supplier
+	supplierRepository supplierService.ISupplierRepository
+	supplierService    *supplierService.SupplierService
 }
 
 func newServiceProvider() *serviceProvider {
@@ -127,6 +146,7 @@ func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
 	return s.txManager
 }
 
+// ========= authentication =========
 func (s *serviceProvider) AuthRepository(ctx context.Context) authService.IAuthRepository {
 	if s.authRepository == nil {
 		s.authRepository = userRepository.NewRepository(s.DBClient(ctx))
@@ -135,12 +155,12 @@ func (s *serviceProvider) AuthRepository(ctx context.Context) authService.IAuthR
 	return s.authRepository
 }
 
-func (s *serviceProvider) JWT(ctx context.Context) authService.IJWT {
-	if s.jwt == nil {
-		s.jwt = jwt.NewJSONWebToken(s.JWTConfig().GetSecretKey())
+func (s *serviceProvider) JWT(ctx context.Context) *authJWT.JSONWebToken {
+	if s.authJWT == nil {
+		s.authJWT = authJWT.NewJSONWebToken(s.JWTConfig().GetSecretKey())
 	}
 
-	return s.jwt
+	return s.authJWT
 }
 
 func (s *serviceProvider) AuthService(ctx context.Context) authApi.IAuthService {
@@ -159,6 +179,16 @@ func (s *serviceProvider) AuthHandler(ctx context.Context) *authApi.AuthHandler 
 	return s.authHanlder
 }
 
+func (s *serviceProvider) AuthMiddleware(ctx context.Context) *authMiddlware.AuthMiddleware {
+	if s.authMiddlware == nil {
+		s.authMiddlware = authMiddlware.NewAuthMiddleware(s.JWT(ctx))
+	}
+
+	return s.authMiddlware
+}
+
+// ========= product =========
+
 func (s *serviceProvider) ProductRepository(ctx context.Context) productService.IProductRepository {
 	if s.productRepository == nil {
 		s.productRepository = productRepository.NewRepository(s.DBClient(ctx))
@@ -167,7 +197,7 @@ func (s *serviceProvider) ProductRepository(ctx context.Context) productService.
 	return s.productRepository
 }
 
-func (s *serviceProvider) ProductService(ctx context.Context) productApi.IProductService {
+func (s *serviceProvider) ProductService(ctx context.Context) *productService.ProductService {
 	if s.productService == nil {
 		s.productService = productService.NewService(s.ProductRepository(ctx), s.TxManager(ctx))
 	}
@@ -181,4 +211,57 @@ func (s *serviceProvider) ProductHandler(ctx context.Context) *productApi.Catalo
 	}
 
 	return s.productHanlder
+}
+
+// ========= suppliers =========
+
+func (s *serviceProvider) SupplierRepo(ctx context.Context) supplierService.ISupplierRepository {
+	if s.supplierRepository == nil {
+		s.supplierRepository = supplierRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.supplierRepository
+}
+
+func (s *serviceProvider) SupplierService(ctx context.Context) *supplierService.SupplierService {
+	if s.supplierService == nil {
+		s.supplierService = supplierService.NewService(s.SupplierRepo(ctx), s.TxManager(ctx))
+	}
+
+	return s.supplierService
+}
+
+// ========= cart =========
+
+func (s *serviceProvider) CartRepo(ctx context.Context) cartService.ICartRepository {
+	if s.cartRepository == nil {
+		s.cartRepository = cartRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.cartRepository
+
+}
+
+func (s *serviceProvider) CartSupplierAdapter(ctx context.Context) cartService.ISupplierAdapter {
+	if s.cartSupplierAdapter == nil {
+		s.cartSupplierAdapter = cartSupplierAdapter.NewAdapter(s.SupplierService(ctx))
+	}
+
+	return s.cartSupplierAdapter
+}
+
+func (s *serviceProvider) CartService(ctx context.Context) cartApi.ICartService {
+	if s.cartService == nil {
+		s.cartService = cartService.NewService(s.CartRepo(ctx), s.ProductService(ctx), s.CartSupplierAdapter(ctx), s.TxManager(ctx))
+	}
+
+	return s.cartService
+}
+
+func (s *serviceProvider) CartHandler(ctx context.Context) *cartApi.CartHandler {
+	if s.cartHanlder == nil {
+		s.cartHanlder = cartApi.NewHandler(s.CartService(ctx))
+	}
+
+	return s.cartHanlder
 }

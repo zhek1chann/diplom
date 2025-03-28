@@ -1,11 +1,20 @@
 package model
 
+import "errors"
+
+var (
+	ErrUnauthorized = errors.New("api: unauthorized")
+)
+
 type AddProductToCartInput struct {
 	Quantity   int   `json:"quantity"`
-	Price      int   `json:"price"`
 	ProductID  int64 `json:"product_id"`
 	SupplierID int64 `json:"supplier_id"`
-	CustomerID     int64 `json:"customer_id"`
+	CustomerID int64 `json:"-"`
+}
+
+type AddProductToCardResponse struct {
+	Status string `json:"status"`
 }
 
 type GetCardInput struct {
@@ -19,7 +28,7 @@ type GetCartResponse struct {
 }
 
 type Supplier struct {
-	MinOrderAmount     int       `json:"min_order_amount`
+	OrderAmount        int       `json:"order_amount`
 	TotalAmount        int       `json:"total_amount"`
 	FreeDeliveryAmount int       `json:"free_delivery_amount"`
 	DeliveryFee        int       `json:"delivery_fee"`
@@ -33,5 +42,16 @@ type Product struct {
 	Quantity int    `json:"quantity"`
 	ID       int64  `json:"id"`
 	Name     string `json:"name"`
-	Image    string `json:"image"`
+	ImageUrl string `json:"image"`
+}
+
+type DeleteProductFromCartInput struct {
+	CustomerID int64 `json:"customer_id"`
+	ProductID  int64 `json:"product_id"`
+	SupplierID int64 `json:"supplier_id"`
+	Quantity   int   `json:"quantity"`
+}
+
+type ErrorResponse struct {
+	Err string `json:"error"`
 }

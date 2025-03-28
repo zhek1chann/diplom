@@ -2,10 +2,12 @@ package product
 
 import (
 	"context"
+	"database/sql"
 	"diploma/modules/product/model"
 	"diploma/modules/product/repository/product/converter"
 	repoModel "diploma/modules/product/repository/product/model"
 	"diploma/pkg/client/db"
+	"errors"
 
 	sq "github.com/Masterminds/squirrel"
 )
@@ -282,4 +284,36 @@ func (r *repo) GetTotalProducts(ctx context.Context) (int, error) {
 	}
 
 	return total, nil
+}
+
+func (r *repo) GetProductPriceBySupplier(ctx context.Context, productID, supplierID int64) (int, error) {
+	builder := sq.
+		Select(psPriceCol).
+		From(productsSupplierTbl).
+		Where(sq.And{
+			sq.Eq{psProductIDCol: productID},
+			sq.Eq{psSupplierIDCol: supplierID},
+		}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return 0, err
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetProductPriceBySupplier",
+		QueryRaw: query,
+	}
+
+	var price int
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&price)
+	// fmt.Println(err)
+	if err != nil {
+		if errors.As(sql.ErrNoRows, &err) {
+			return 0, model.ErrNoRows
+		}
+		return 0, err
+	}
+	return price, nil
 }

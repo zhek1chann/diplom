@@ -5,6 +5,7 @@ import (
 	"diploma/docs"
 	"diploma/internal/config"
 	"diploma/modules/auth"
+	"diploma/modules/cart"
 	"diploma/modules/product"
 
 	"log"
@@ -88,9 +89,15 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 
 	authHandler := a.serviceProvider.AuthHandler(ctx)
 	auth.RegisterRoutes(apiGroup, authHandler)
+	authMiddleware := a.serviceProvider.AuthMiddleware(ctx)
 
 	productHandler := a.serviceProvider.ProductHandler(ctx)
 	product.RegisterRoutes(apiGroup, productHandler)
+
+	cartHanlder := a.serviceProvider.CartHandler(ctx)
+	cartGroup := router.Group("/api")
+	cartGroup.Use(authMiddleware.AuthMiddleware())
+	cart.RegisterRoutes(cartGroup, cartHanlder)
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins:   []string{"*"},

@@ -6,7 +6,7 @@ import (
 	"diploma/pkg/client/db"
 )
 
-type productServ struct {
+type ProductService struct {
 	productRepository IProductRepository
 	txManager         db.TxManager
 }
@@ -14,8 +14,8 @@ type productServ struct {
 func NewService(
 	productRepository IProductRepository,
 	txManager db.TxManager,
-) *productServ {
-	return &productServ{
+) *ProductService {
+	return &ProductService{
 		productRepository: productRepository,
 		txManager:         txManager,
 	}
@@ -26,4 +26,5 @@ type IProductRepository interface {
 	GetSupplierProductListByProduct(ctx context.Context, id int64) ([]model.ProductSupplier, error)
 	GetProductList(ctx context.Context, query *model.ProductListQuery) ([]model.Product, error)
 	GetTotalProducts(ctx context.Context) (int, error)
+	GetProductPriceBySupplier(ctx context.Context, productID, supplierID int64) (int, error)
 }

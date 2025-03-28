@@ -5,7 +5,7 @@ import (
 	"diploma/modules/product/model"
 )
 
-func (s *productServ) ProductList(ctx context.Context, query *model.ProductListQuery) (*model.ProductList, error) {
+func (s *ProductService) ProductList(ctx context.Context, query *model.ProductListQuery) (*model.ProductList, error) {
 	productList, err := s.productRepository.GetProductList(ctx, query)
 	if err != nil {
 		return nil, err

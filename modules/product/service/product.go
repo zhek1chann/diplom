@@ -5,7 +5,7 @@ import (
 	"diploma/modules/product/model"
 )
 
-func (s *productServ) Product(ctx context.Context, query *model.ProductQuery) (*model.DetailedProduct, error) {
+func (s *ProductService) Product(ctx context.Context, query *model.ProductQuery) (*model.DetailedProduct, error) {
 
 	product, err := s.productRepository.GetProduct(ctx, query.ID)
 	if err != nil {
@@ -23,4 +23,7 @@ func (s *productServ) Product(ctx context.Context, query *model.ProductQuery) (*
 		ProductSupplierList: productSupplierList,
 	}, err
 
+}
+func (s *ProductService) ProductPriceBySupplier(ctx context.Context, productID, supplierID int64) (int, error) {
+	return s.productRepository.GetProductPriceBySupplier(ctx, productID, supplierID)
 }

@@ -95,8 +95,47 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/card/put": {
+        "/api/cart": {
             "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "--",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart"
+                ],
+                "summary": "get cart",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.GetCartResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/cart/add": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
                 "description": "--",
                 "consumes": [
                     "application/json"
@@ -123,7 +162,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.AddProductToCardResponse"
                         }
                     },
                     "400": {
@@ -213,41 +252,6 @@ const docTemplate = `{
                         }
                     }
                 }
-            },
-            "post": {
-                "description": "get customer's cart",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "cart"
-                ],
-                "summary": "Get cart",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "customer ID",
-                        "name": "customer-ID",
-                        "in": "query"
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/diploma_modules_cart_handler_model.GetCartResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/diploma_modules_cart_handler_model.ErrorResponse"
-                        }
-                    }
-                }
             }
         }
     },
@@ -306,15 +310,17 @@ const docTemplate = `{
                 }
             }
         },
+        "diploma_modules_cart_handler_model.AddProductToCardResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
         "diploma_modules_cart_handler_model.AddProductToCartInput": {
             "type": "object",
             "properties": {
-                "customer_id": {
-                    "type": "integer"
-                },
-                "price": {
-                    "type": "integer"
-                },
                 "product_id": {
                     "type": "integer"
                 },
@@ -341,7 +347,7 @@ const docTemplate = `{
                 "suppliers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Supplier"
+                        "$ref": "#/definitions/diploma_modules_cart_handler_model.Supplier"
                     }
                 },
                 "total": {
@@ -349,7 +355,7 @@ const docTemplate = `{
                 }
             }
         },
-        "diploma_modules_product_handler_model.DetailedProduct": {
+        "diploma_modules_cart_handler_model.Product": {
             "type": "object",
             "properties": {
                 "id": {
@@ -366,12 +372,66 @@ const docTemplate = `{
                 },
                 "quantity": {
                     "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_cart_handler_model.Supplier": {
+            "type": "object",
+            "properties": {
+                "delivery_fee": {
+                    "type": "integer"
+                },
+                "free_delivery_amount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "orderAmount": {
+                    "type": "integer"
+                },
+                "product_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_cart_handler_model.Product"
+                    }
+                },
+                "total_amount": {
+                    "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.DetailedProduct": {
+            "type": "object",
+            "properties": {
+                "product": {
+                    "$ref": "#/definitions/diploma_modules_product_handler_model.Product"
                 },
                 "suppliers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplierInfo"
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplier"
                     }
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.Product": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "imageUrl": {
+                    "type": "string"
+                },
+                "lowest_product_supplier": {
+                    "$ref": "#/definitions/diploma_modules_product_handler_model.ProductSupplier"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },
@@ -381,7 +441,7 @@ const docTemplate = `{
                 "product_list": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/model.Product"
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.Product"
                     }
                 },
                 "total": {
@@ -397,48 +457,21 @@ const docTemplate = `{
                 }
             }
         },
-        "diploma_modules_product_handler_model.ProductSupplierInfo": {
+        "diploma_modules_product_handler_model.ProductSupplier": {
             "type": "object",
             "properties": {
-                "delivery_fee": {
-                    "type": "number"
-                },
-                "minimum_free_delivery_amount": {
-                    "type": "number"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "supplier_id": {
-                    "type": "integer"
-                }
-            }
-        },
-        "gin.H": {
-            "type": "object",
-            "additionalProperties": {}
-        },
-        "model.Product": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer"
-                },
-                "image": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
                 "price": {
                     "type": "integer"
                 },
-                "quantity": {
+                "sell_amount": {
                     "type": "integer"
+                },
+                "supplier": {
+                    "$ref": "#/definitions/diploma_modules_product_handler_model.Supplier"
                 }
             }
         },
-        "model.Supplier": {
+        "diploma_modules_product_handler_model.Supplier": {
             "type": "object",
             "properties": {
                 "delivery_fee": {
@@ -450,34 +483,36 @@ const docTemplate = `{
                 "id": {
                     "type": "integer"
                 },
-                "minOrderAmount": {
-                    "type": "integer"
-                },
                 "name": {
                     "type": "string"
                 },
-                "product_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/model.Product"
-                    }
-                },
-                "total_amount": {
+                "order_amount": {
                     "type": "integer"
                 }
             }
+        },
+        "gin.H": {
+            "type": "object",
+            "additionalProperties": {}
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8080",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "Go JWT Swagger Example API",
+	Description:      "This is a sample server with JWT authorization.",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",
