@@ -47,7 +47,7 @@ type ProductSupplier struct {
 func generatePhoneNumber(userID int) string {
 	// For example, we generate a phone number by prefixing with a fixed code
 	// You can customize the logic as needed
-	return fmt.Sprintf("+1234567%d", userID)
+	return fmt.Sprintf("8234567%d", userID)
 }
 
 // Function to generate a hashed password (same for each user)
