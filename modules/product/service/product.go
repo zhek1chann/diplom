@@ -24,6 +24,11 @@ func (s *ProductService) Product(ctx context.Context, query *model.ProductQuery)
 	}, err
 
 }
+
 func (s *ProductService) ProductPriceBySupplier(ctx context.Context, productID, supplierID int64) (int, error) {
 	return s.productRepository.GetProductPriceBySupplier(ctx, productID, supplierID)
+}
+
+func (s *ProductService) ProductInfo(ctx context.Context, id int64) (*model.Product, error) {
+	return s.productRepository.GetProduct(ctx, id)
 }

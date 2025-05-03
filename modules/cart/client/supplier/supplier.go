@@ -6,19 +6,19 @@ import (
 	supplierModel "diploma/modules/supplier/model"
 )
 
-type SupplierAdapter struct {
+type SupplierClient struct {
 	supplierService ISupplierService
 }
 
-func NewAdapter(supplierService ISupplierService) *SupplierAdapter {
-	return &SupplierAdapter{supplierService: supplierService}
+func NewClient(supplierService ISupplierService) *SupplierClient {
+	return &SupplierClient{supplierService: supplierService}
 }
 
 type ISupplierService interface {
 	SupplierListByIDList(ctx context.Context, idList []int64) ([]supplierModel.Supplier, error)
 }
 
-func (a *SupplierAdapter) SupplierListByIDList(ctx context.Context, IDList []int64) ([]model.Supplier, error) {
+func (a *SupplierClient) SupplierListByIDList(ctx context.Context, IDList []int64) ([]model.Supplier, error) {
 
 	suppliers, err := a.supplierService.SupplierListByIDList(ctx, IDList)
 	if err != nil {

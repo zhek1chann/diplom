@@ -174,6 +174,90 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/cart/checkout": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Processes the checkout of the authenticated user's cart.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart"
+                ],
+                "summary": "Process checkout operation",
+                "responses": {
+                    "200": {
+                        "description": "Checkout status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/order": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves orders for the authenticated user using the provided JWT claims.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Retrieve orders for a user",
+                "responses": {
+                    "200": {
+                        "description": "List of orders",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/diploma_modules_order_handler_model.GetOrdersResponse"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized: invalid or missing JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error while retrieving orders",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/product/:id": {
             "get": {
                 "description": "Register a new user",
@@ -403,6 +487,79 @@ const docTemplate = `{
                 },
                 "total_amount": {
                     "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_order_handler_model.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "diploma_modules_order_handler_model.GetOrdersResponse": {
+            "type": "object",
+            "properties": {
+                "orders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_order_handler_model.Order"
+                    }
+                }
+            }
+        },
+        "diploma_modules_order_handler_model.Order": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "order_date": {
+                    "type": "string"
+                },
+                "product_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_order_handler_model.Product"
+                    }
+                },
+                "status": {
+                    "type": "string"
+                },
+                "supplier": {
+                    "$ref": "#/definitions/diploma_modules_order_handler_model.Supplier"
+                }
+            }
+        },
+        "diploma_modules_order_handler_model.Product": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "image": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_order_handler_model.Supplier": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
                 }
             }
         },

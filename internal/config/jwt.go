@@ -21,7 +21,7 @@ type jwtConfig struct {
 func NewJWTConfig() (JWTConfig, error) {
 	secretKey := os.Getenv(jwtSecretKey)
 	if len(secretKey) == 0 {
-		return nil, errors.New("jwt secret key  not found")
+		return nil, errors.New("jwt secret key not found")
 	}
 
 	return &jwtConfig{

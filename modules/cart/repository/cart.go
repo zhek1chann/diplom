@@ -148,3 +148,30 @@ func (r *cartRepo) GetCartItems(ctx context.Context, cartID int64) ([]model.Supp
 
 	return converter.ToServiceSupplierFromRepo(items), nil
 }
+
+func (r *cartRepo) DeleteCart(ctx context.Context, cartID int64) error {
+	builder := sq.Delete(cartsTable).
+		PlaceholderFormat(sq.Dollar).
+		Where(sq.Eq{cIDColumn: cartID})
+
+	query, args, err := builder.ToSql()
+
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "cart_repository.Delete",
+		QueryRaw: query,
+	}
+
+	result, err := r.db.DB().ExecContext(ctx, q, args...)
+	if err != nil {
+		return fmt.Errorf("error executing query: %v", err)
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("no rows deleted")
+	}
+
+	return nil
+}

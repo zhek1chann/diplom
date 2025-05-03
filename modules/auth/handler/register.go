@@ -8,6 +8,7 @@ import (
 
 	"diploma/modules/auth/handler/converter"
 	modelApi "diploma/modules/auth/handler/model"
+	"diploma/modules/auth/model"
 
 	"github.com/gin-gonic/gin"
 )
@@ -43,9 +44,8 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"errors": form.Errors})
 		return
 	}
-	// TODO: refactor return when user already exist
 	authUser := converter.ToServiceFromRegisterInput(form.RegisterInput)
-	authUser.Info.Role = 0
+	authUser.Info.Role = model.CustomerRole
 	id, err := h.service.Register(c.Request.Context(), authUser)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

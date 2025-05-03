@@ -1,0 +1,196 @@
+package repository
+
+import (
+	"context"
+	"diploma/modules/order/model"
+	"diploma/modules/order/repo/converter"
+	modelRepo "diploma/modules/order/repo/model"
+	"diploma/pkg/client/db"
+
+	sq "github.com/Masterminds/squirrel"
+)
+
+const (
+	ordersTable       = "orders"
+	oIDColumn         = "id"
+	oCustomerIDColumn = "customer_id"
+	oOrderDateColumn  = "order_date"
+	oSupplierIDColumn = "supplier_id"
+	oStatusIDColumn   = "status_id"
+)
+
+// CreateOrder inserts a new order record and returns its id.
+func (r *OrderRepo) CreateOrder(ctx context.Context, order *model.Order) (int64, error) {
+	builder := sq.
+		Insert(ordersTable).
+		PlaceholderFormat(sq.Dollar).
+		Columns(oCustomerIDColumn, oSupplierIDColumn, oOrderDateColumn, oStatusIDColumn).
+		Values(order.CustomerID, order.SupplierID, order.OrderDate, order.StatusID).
+		Suffix("RETURNING " + oIDColumn)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return 0, err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.CreateOrder",
+		QueryRaw: query,
+	}
+
+	var orderID int64
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&orderID)
+	if err != nil {
+		return 0, err
+	}
+	return orderID, nil
+}
+
+// GetOrder retrieves an order by its id.
+func (r *OrderRepo) OrdersByUserID(ctx context.Context, userID int64) ([]*model.Order, error) {
+	builder := sq.
+		Select(oIDColumn, oCustomerIDColumn, oOrderDateColumn, oSupplierIDColumn, oStatusIDColumn).
+		PlaceholderFormat(sq.Dollar).
+		From(ordersTable).
+		Where(sq.Eq{oCustomerIDColumn: userID})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.OrdersByUserID",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*model.Order
+	for rows.Next() {
+		var orderRepo modelRepo.Order
+		if err := rows.Scan(
+			&orderRepo.ID,
+			&orderRepo.CustomerID,
+			&orderRepo.OrderDate,
+			&orderRepo.SupplierID,
+			&orderRepo.StatusID,
+		); err != nil {
+			return nil, err
+		}
+		orders = append(orders, converter.ToServiceOrderFromRepo(&orderRepo))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(orders) == 0 {
+		return nil, model.ErrNoRows
+	}
+	return orders, nil
+}
+
+// GetOrdersBySupplierID retrieves a list of orders by supplier id.
+func (r *OrderRepo) OrdersBySupplierID(ctx context.Context, supplierID int64) ([]*model.Order, error) {
+	builder := sq.
+		Select(oIDColumn, oCustomerIDColumn, oOrderDateColumn, oSupplierIDColumn, oStatusIDColumn).
+		PlaceholderFormat(sq.Dollar).
+		From(ordersTable).
+		Where(sq.Eq{oSupplierIDColumn: supplierID})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.GetOrdersBySupplierID",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*model.Order
+	for rows.Next() {
+		var orderRepo modelRepo.Order
+		if err := rows.Scan(
+			&orderRepo.ID,
+			&orderRepo.CustomerID,
+			&orderRepo.OrderDate,
+			&orderRepo.SupplierID,
+			&orderRepo.StatusID,
+		); err != nil {
+			return nil, err
+		}
+		orders = append(orders, converter.ToServiceOrderFromRepo(&orderRepo))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(orders) == 0 {
+		return nil, model.ErrNoRows
+	}
+	return orders, nil
+}
+
+// UpdateOrder modifies an existing order record.
+// func (r *OrderRepo) UpdateOrder(ctx context.Context, order *model.Order) error {
+// 	builder := sq.
+// 		Update(ordersTable).
+// 		PlaceholderFormat(sq.Dollar).
+// 		Set(oCustomerIDColumn, order.CustomerID).
+// 		Set(oOrderDateColumn, order.OrderDate).
+
+// 	query, args, err := builder.ToSql()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	q := db.Query{
+// 		Name:     "order_repository.UpdateOrder",
+// 		QueryRaw: query,
+// 	}
+
+// 	result, err := r.db.DB().ExecContext(ctx, q, args...)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if affected, _ := result.RowsAffected(); affected == 0 {
+// 		return fmt.Errorf("no rows updated")
+// 	}
+// 	return nil
+// }
+
+// DeleteOrder removes an order record by its id.
+// func (r *OrderRepo) DeleteOrder(ctx context.Context, id int64) error {
+// 	builder := sq.
+// 		Delete(ordersTable).
+// 		PlaceholderFormat(sq.Dollar).
+// 		Where(sq.Eq{oIDColumn: id})
+
+// 	query, args, err := builder.ToSql()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	q := db.Query{
+// 		Name:     "order_repository.DeleteOrder",
+// 		QueryRaw: query,
+// 	}
+
+// 	result, err := r.db.DB().ExecContext(ctx, q, args...)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if affected, _ := result.RowsAffected(); affected == 0 {
+// 		return fmt.Errorf("no rows deleted")
+// 	}
+// 	return nil
+// }

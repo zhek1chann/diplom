@@ -15,6 +15,9 @@ func (s *authServ) Register(ctx context.Context, user *model.AuthUser) (int64, e
 	if err != nil {
 		return 0, err
 	}
+	if user.Info.Role == model.AdminRole {
+		return 0, errors.New("admin role is not allowed")
+	}
 	err = s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
 		var errTx error
 		id, errTx = s.authRepository.Create(ctx, user)

@@ -100,7 +100,6 @@ func (s *cartServ) Cart(ctx context.Context, userID int64) (*model.Cart, error) 
 			cart.Suppliers[i].FreeDeliveryAmount = supplier.FreeDeliveryAmount
 			cart.Suppliers[i].DeliveryFee = supplier.DeliveryFee
 			cart.Suppliers[i].TotalAmount = getTotalSupplier(ctx, cart.Suppliers[i].ProductList)
-
 		}
 		return nil
 	})

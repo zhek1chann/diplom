@@ -21,13 +21,22 @@ import (
 	productRepository "diploma/modules/product/repository/product"
 	productService "diploma/modules/product/service"
 
-	cartSupplierAdapter "diploma/modules/cart/adapter/supplier"
+	cartOrderClient "diploma/modules/cart/client/order"
+	cartSupplierClient "diploma/modules/cart/client/supplier"
 	cartApi "diploma/modules/cart/handler"
 	cartRepository "diploma/modules/cart/repository"
 	cartService "diploma/modules/cart/service"
 
 	supplierRepository "diploma/modules/supplier/repo"
 	supplierService "diploma/modules/supplier/service"
+
+	orderProductClient "diploma/modules/order/client/product"
+	orderSupplierCleint "diploma/modules/order/client/supplier"
+	orderHander "diploma/modules/order/handler"
+	orderRepository "diploma/modules/order/repo"
+
+	// orderProductClient "diploma/modules/order/client/product"
+	orderService "diploma/modules/order/service"
 )
 
 type serviceProvider struct {
@@ -53,14 +62,23 @@ type serviceProvider struct {
 	productHanlder    *productApi.CatalogHandler
 
 	// cart
-	cartSupplierAdapter cartService.ISupplierAdapter
-	cartRepository      cartService.ICartRepository
-	cartService         cartApi.ICartService
-	cartHanlder         *cartApi.CartHandler
+	cartSupplierClient cartService.ISupplierClient
+	cartOrderClient    cartService.IOrderClient
+	cartRepository     cartService.ICartRepository
+	cartService        cartApi.ICartService
+	cartHanlder        *cartApi.CartHandler
 
 	// supplier
 	supplierRepository supplierService.ISupplierRepository
 	supplierService    *supplierService.SupplierService
+
+	// order
+	// orderHandler  *orderHandler.OrderHandler
+	orderRepository     orderService.IOrderRepository
+	orderSupplierCleint orderService.ISupplierClient
+	orderProductClient  orderService.IProductClient
+	orderService        *orderService.OrderService
+	orderHandler        *orderHander.OrderHandler
 }
 
 func newServiceProvider() *serviceProvider {
@@ -242,17 +260,25 @@ func (s *serviceProvider) CartRepo(ctx context.Context) cartService.ICartReposit
 
 }
 
-func (s *serviceProvider) CartSupplierAdapter(ctx context.Context) cartService.ISupplierAdapter {
-	if s.cartSupplierAdapter == nil {
-		s.cartSupplierAdapter = cartSupplierAdapter.NewAdapter(s.SupplierService(ctx))
+func (s *serviceProvider) CartSupplierClient(ctx context.Context) cartService.ISupplierClient {
+	if s.cartSupplierClient == nil {
+		s.cartSupplierClient = cartSupplierClient.NewClient(s.SupplierService(ctx))
 	}
 
-	return s.cartSupplierAdapter
+	return s.cartSupplierClient
+}
+
+func (s *serviceProvider) CartOrderClient(ctx context.Context) cartService.IOrderClient {
+	if s.cartOrderClient == nil {
+		s.cartOrderClient = cartOrderClient.NewClient(s.OrderService(ctx))
+	}
+
+	return s.cartOrderClient
 }
 
 func (s *serviceProvider) CartService(ctx context.Context) cartApi.ICartService {
 	if s.cartService == nil {
-		s.cartService = cartService.NewService(s.CartRepo(ctx), s.ProductService(ctx), s.CartSupplierAdapter(ctx), s.TxManager(ctx))
+		s.cartService = cartService.NewService(s.CartRepo(ctx), s.ProductService(ctx), s.CartSupplierClient(ctx), s.CartOrderClient(ctx), s.TxManager(ctx))
 	}
 
 	return s.cartService
@@ -264,4 +290,46 @@ func (s *serviceProvider) CartHandler(ctx context.Context) *cartApi.CartHandler 
 	}
 
 	return s.cartHanlder
+}
+
+// order
+
+func (s *serviceProvider) OrderSupplierClient(ctx context.Context) orderService.ISupplierClient {
+	if s.orderSupplierCleint == nil {
+		s.orderSupplierCleint = orderSupplierCleint.NewClient(s.SupplierService(ctx))
+	}
+
+	return s.orderSupplierCleint
+}
+
+func (s *serviceProvider) OrderProductClient(ctx context.Context) orderService.IProductClient {
+	if s.orderProductClient == nil {
+		s.orderProductClient = orderProductClient.NewClient(s.ProductService(ctx))
+	}
+
+	return s.orderProductClient
+}
+
+func (s *serviceProvider) OrderRepo(ctx context.Context) orderService.IOrderRepository {
+	if s.orderRepository == nil {
+		s.orderRepository = orderRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.orderRepository
+}
+
+func (s *serviceProvider) OrderService(ctx context.Context) *orderService.OrderService {
+	if s.orderService == nil {
+		s.orderService = orderService.NewService(s.OrderRepo(ctx), s.OrderSupplierClient(ctx), s.OrderProductClient(ctx), s.TxManager(ctx))
+	}
+
+	return s.orderService
+}
+
+func (s *serviceProvider) OrderHandler(ctx context.Context) *orderHander.OrderHandler {
+	if s.orderHandler == nil {
+		s.orderHandler = orderHander.NewHandler(s.OrderService(ctx))
+	}
+
+	return s.orderHandler
 }

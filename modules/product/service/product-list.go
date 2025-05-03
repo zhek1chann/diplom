@@ -21,3 +21,11 @@ func (s *ProductService) ProductList(ctx context.Context, query *model.ProductLi
 		Total:    total,
 	}, err
 }
+
+func (s *ProductService) ProductListByIDList(ctx context.Context, idList []int64) ([]*model.Product, error) {
+	productList, err := s.productRepository.GetProductListByIDList(ctx, idList)
+	if err != nil {
+		return nil, err
+	}
+	return productList, nil
+}

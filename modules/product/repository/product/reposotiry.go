@@ -93,6 +93,76 @@ func (r *repo) GetProduct(ctx context.Context, id int64) (*model.Product, error)
 	return converter.ToProductFromRepo(product), nil
 }
 
+// GetSupplierProductListByProduct retrieves a list of suppliers for a specific product.
+// GetProductListByIDList retrieves a list of products by their IDs.
+func (r *repo) GetProductListByIDList(ctx context.Context, idList []int64) ([]*model.Product, error) {
+	// Build the SQL query to select multiple products based on the list of IDs.
+	builder := sq.
+		Select(
+			pIdCol,
+			pNameCol,
+			pImageUrlCol,
+			pGTINCol,
+			pCreatedAtCol,
+			pUpdatedAtCol,
+		).
+		From(productsTbl).
+		Where(sq.Eq{pIdCol: idList}). // Use the IN clause to match any ID from the idList
+		PlaceholderFormat(sq.Dollar)
+
+	// Convert the query builder to SQL and arguments.
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	// Prepare the query object for logging and execution.
+	q := db.Query{
+		Name:     "product_repository.GetProductListByIDList",
+		QueryRaw: query,
+	}
+
+	// Execute the query and fetch the rows.
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Create a slice to hold the results.
+	var products []repoModel.Product
+
+	// Iterate over the result rows and scan the values into the products slice.
+	for rows.Next() {
+		var product repoModel.Product
+		err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.ImageUrl,
+			&product.GTIN,
+			&product.CreatedAt,
+			&product.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, product)
+	}
+
+	// Check if there were any errors during the row iteration.
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Convert the repo models to the business models and return.
+	var result []*model.Product
+	for _, product := range products {
+		result = append(result, converter.ToProductFromRepo(product))
+	}
+
+	return result, nil
+}
+
 func (r *repo) GetSupplierProductListByProduct(ctx context.Context, id int64) ([]model.ProductSupplier, error) {
 	// Build the query to fetch suppliers for a specific product
 	builder := sq.
@@ -144,12 +214,14 @@ func (r *repo) GetSupplierProductListByProduct(ctx context.Context, id int64) ([
 			&s.FreeDeliveryAmount,
 			&s.DeliveryFee,
 		); err != nil {
+
 			return nil, err
 		}
 		ps.Supplier = s
 		results = append(results, ps)
 	}
 	if err := rows.Err(); err != nil {
+
 		return nil, err
 	}
 	return results, nil

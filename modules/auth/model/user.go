@@ -5,6 +5,12 @@ import (
 	"time"
 )
 
+const (
+	CustomerRole = iota
+	SupplierRole
+	AdminRole
+)
+
 type User struct {
 	ID        int64
 	Info      *UserInfo

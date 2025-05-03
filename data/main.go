@@ -154,54 +154,54 @@ func main() {
 	loadJSON("delivery_conditions.json", &deliveryConditions)
 
 	// Insert into delivery_conditions
-	// for _, condition := range deliveryConditions {
-	// 	_, err := db.Exec(`INSERT INTO delivery_conditions (condition_id, minimum_free_delivery_amount, delivery_fee)
-	// 						VALUES ($1, $2, $3)`, condition.ConditionID, condition.MinimumFreeDeliveryAmount, condition.DeliveryFee)
-	// 	if err != nil {
-	// 		log.Fatalf("Error inserting delivery condition: %v", err)
-	// 	}
-	// }
+	for _, condition := range deliveryConditions {
+		_, err := db.Exec(`INSERT INTO delivery_conditions (condition_id, minimum_free_delivery_amount, delivery_fee)
+							VALUES ($1, $2, $3)`, condition.ConditionID, condition.MinimumFreeDeliveryAmount, condition.DeliveryFee)
+		if err != nil {
+			log.Fatalf("Error inserting delivery condition: %v", err)
+		}
+	}
 
-	// Suppliers
+	// // Suppliers
 	suppliers := []Supplier{}
 	loadJSON("suppliers.json", &suppliers)
-	// fmt.Println("Suppliers")
-	// insertSupplier(db, suppliers)
+	fmt.Println("Suppliers")
+	insertSupplier(db, suppliers)
 
-	// // Products
-	// products := []Product{}
-	// loadJSON("products.json", &products)
+	// Products
+	products := []Product{}
+	loadJSON("products.json", &products)
 
-	// fmt.Println(products)
-	// // Insert into products
-	// for _, product := range products {
-	// 	_, err := db.Exec(`INSERT INTO products (id, name, image_url, gtin) 
-	// 						VALUES ($1, $2, $3, $4)`, product.ID, product.Name, product.ImageURL, product.GTIN)
-	// 	if err != nil {
-	// 		fmt.Println(product)
-	// 		log.Fatalf("Error inserting product: %v", err)
-	// 	}
-	// }
+	fmt.Println(products)
+	// Insert into products
+	for _, product := range products {
+		_, err := db.Exec(`INSERT INTO products (id, name, image_url, gtin)
+							VALUES ($1, $2, $3, $4)`, product.ID, product.Name, product.ImageURL, product.GTIN)
+		if err != nil {
+			fmt.Println(product)
+			log.Fatalf("Error inserting product: %v", err)
+		}
+	}
 
 	// Products Supplier
-	// productSuppliers := []ProductSupplier{}
-	// loadJSON("products_supplier.json", &productSuppliers)
-	// fmt.Print("Products Supplier")
-	// // Insert into products_supplier
-	// for _, ps := range productSuppliers {
-	// 	_, err := db.Exec(`INSERT INTO products_supplier (product_id, supplier_id, price, sell_amount) 
-	// 						VALUES ($1, $2, $3, $4)`, ps.ProductID, ps.SupplierID, ps.Price, ps.MinSellAmount)
-	// 	if err != nil {
-	// 		fmt.Println(ps)
-	// 		// log.Fatalf("Error inserting product supplier: %v", err)
-	// 	}
-	// }
+	productSuppliers := []ProductSupplier{}
+	loadJSON("products_supplier.json", &productSuppliers)
+	fmt.Print("Products Supplier")
+	// Insert into products_supplier
+	for _, ps := range productSuppliers {
+		_, err := db.Exec(`INSERT INTO products_supplier (product_id, supplier_id, price, sell_amount)
+							VALUES ($1, $2, $3, $4)`, ps.ProductID, ps.SupplierID, ps.Price, ps.MinSellAmount)
+		if err != nil {
+			fmt.Println(ps)
+			// log.Fatalf("Error inserting product supplier: %v", err)
+		}
+	}
 
 	fmt.Println("updating products_supplier")
 	err = updateProductPrices(db)
 	if err != nil {
-        log.Fatalf("Error updating product prices: %v", err)
-    }
+		log.Fatalf("Error updating product prices: %v", err)
+	}
 
 	fmt.Println("Data migration completed successfully!")
 }

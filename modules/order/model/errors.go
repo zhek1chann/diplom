@@ -8,6 +8,4 @@ var (
 	ErrDuplicateNumber = errors.New("models: duplicate email")
 
 	ErrNoRows = errors.New("models: no rows")
-
-	ErrInvalidCart = errors.New("models: invalid cart")
 )

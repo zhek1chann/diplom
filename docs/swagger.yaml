@@ -98,6 +98,53 @@ definitions:
       total_amount:
         type: integer
     type: object
+  diploma_modules_order_handler_model.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  diploma_modules_order_handler_model.GetOrdersResponse:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/diploma_modules_order_handler_model.Order'
+        type: array
+    type: object
+  diploma_modules_order_handler_model.Order:
+    properties:
+      id:
+        type: integer
+      order_date:
+        type: string
+      product_list:
+        items:
+          $ref: '#/definitions/diploma_modules_order_handler_model.Product'
+        type: array
+      status:
+        type: string
+      supplier:
+        $ref: '#/definitions/diploma_modules_order_handler_model.Supplier'
+    type: object
+  diploma_modules_order_handler_model.Product:
+    properties:
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+      price:
+        type: integer
+      quantity:
+        type: integer
+    type: object
+  diploma_modules_order_handler_model.Supplier:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+    type: object
   diploma_modules_product_handler_model.DetailedProduct:
     properties:
       product:
@@ -264,6 +311,60 @@ paths:
       summary: Put product to Card
       tags:
       - cart
+  /api/cart/checkout:
+    post:
+      consumes:
+      - application/json
+      description: Processes the checkout of the authenticated user's cart.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Checkout status
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/diploma_modules_cart_handler_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/diploma_modules_cart_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Process checkout operation
+      tags:
+      - cart
+  /api/order:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves orders for the authenticated user using the provided
+        JWT claims.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of orders
+          schema:
+            items:
+              $ref: '#/definitions/diploma_modules_order_handler_model.GetOrdersResponse'
+            type: array
+        "401":
+          description: 'Unauthorized: invalid or missing JWT token'
+          schema:
+            $ref: '#/definitions/diploma_modules_order_handler_model.ErrorResponse'
+        "500":
+          description: Internal server error while retrieving orders
+          schema:
+            $ref: '#/definitions/diploma_modules_order_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Retrieve orders for a user
+      tags:
+      - orders
   /api/product/:id:
     get:
       consumes:

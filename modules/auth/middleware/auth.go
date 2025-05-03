@@ -18,7 +18,6 @@ func (m *AuthMiddleware) AuthMiddleware() gin.HandlerFunc {
 			c.Abort() // Stop further processing of the request
 			return
 		}
-
 		user, err := m.jwt.VerifyToken(token)
 		if err != nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
