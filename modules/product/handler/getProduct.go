@@ -18,16 +18,16 @@ import (
 // @Produce      json
 // @Param        product_id     query     int     false "product id"
 // @Success      201  {object}  modelApi.ProductResponse
-// @Failure      400  {object}  gin.H
+// @Failure      400  {object}  modelApi.ErrorResponse
 // @Router       /api/product/:id [get]
 func (h *CatalogHandler) GetProduct(c *gin.Context) {
 
-	productID := c.DefaultQuery("product_id", "20") // Default to 10 if not provided
+	productID := c.Param("id")
 
 	// Convert limit and offset from string to int
 	productIdInt, err := strconv.ParseInt(productID, 10, 64)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
 		return
 	}
 

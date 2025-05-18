@@ -40,7 +40,7 @@ func (r *cartRepo) CreateCart(ctx context.Context, userID int64) (int64, error) 
 }
 
 func (r *cartRepo) Cart(ctx context.Context, userID int64) (*model.Cart, error) {
-	builder := sq.Select(cIDColumn, cTotalColumn).
+	builder := sq.Select(cIDColumn, cTotalColumn, cCustomerIDColumn).
 		PlaceholderFormat(sq.Dollar).
 		From(cartsTable).
 		Where(sq.Eq{cCustomerIDColumn: userID})
@@ -58,7 +58,7 @@ func (r *cartRepo) Cart(ctx context.Context, userID int64) (*model.Cart, error) 
 
 	var cart modelRepo.Cart
 
-	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&cart.ID, &cart.Total)
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&cart.ID, &cart.Total, &cart.CustomerID)
 	if err != nil {
 		if errors.As(sql.ErrNoRows, &err) {
 			return nil, model.ErrNoRows

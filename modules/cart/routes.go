@@ -11,8 +11,8 @@ func RegisterRoutes(router *gin.RouterGroup, h *handler.CartHandler) {
 	{
 		cardRoutes.POST("/add", h.AddProductToCard)
 		cardRoutes.GET("/", h.GetCart)
-		// cardRoutes.DELETE("/delete", h.DeleteProductFromCart)
 		cardRoutes.POST("/checkout", h.Checkout)
+		cardRoutes.DELETE("/delete", h.DeleteProductFromCart)
 
 	}
 

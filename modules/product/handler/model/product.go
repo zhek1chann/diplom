@@ -33,3 +33,7 @@ type DetailedProduct struct {
 	*Product            `json:"product"`
 	ProductSupplierList []ProductSupplier `json:"suppliers"`
 }
+
+type ErrorResponse struct {
+	Err string `json:"error"`
+}

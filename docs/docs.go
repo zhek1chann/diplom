@@ -35,7 +35,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/diploma_modules_auth_handler_model.LoginInput"
+                            "$ref": "#/definitions/model.LoginInput"
                         }
                     }
                 ],
@@ -43,13 +43,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/diploma_modules_auth_handler_model.LoginResponse"
+                            "$ref": "#/definitions/model.LoginResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/diploma_modules_auth_handler_model.ErrorResponse"
                         }
                     }
                 }
@@ -75,7 +75,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/diploma_modules_auth_handler_model.RegisterInput"
+                            "$ref": "#/definitions/model.RegisterInput"
                         }
                     }
                 ],
@@ -83,13 +83,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/diploma_modules_auth_handler_model.RegisterResponse"
+                            "$ref": "#/definitions/model.RegisterResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/diploma_modules_auth_handler_model.ErrorResponse"
                         }
                     }
                 }
@@ -117,7 +117,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/diploma_modules_cart_handler_model.GetCartResponse"
+                            "$ref": "#/definitions/model.GetCartResponse"
                         }
                     },
                     "400": {
@@ -154,7 +154,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/diploma_modules_cart_handler_model.AddProductToCartInput"
+                            "$ref": "#/definitions/model.AddProductToCartInput"
                         }
                     }
                 ],
@@ -162,7 +162,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/diploma_modules_cart_handler_model.AddProductToCardResponse"
+                            "$ref": "#/definitions/model.AddProductToCardResponse"
                         }
                     },
                     "400": {
@@ -215,6 +215,86 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/cart/delete": {
+            "delete": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Deletes given quantity of product by product_id and supplier_id from cart",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "cart"
+                ],
+                "summary": "Delete product from cart",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product ID",
+                        "name": "product_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Supplier ID",
+                        "name": "supplier_id",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Quantity to delete (default 1)",
+                        "name": "quantity",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "/api/order": {
             "get": {
                 "security": [
@@ -239,7 +319,7 @@ const docTemplate = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/diploma_modules_order_handler_model.GetOrdersResponse"
+                                "$ref": "#/definitions/model.GetOrdersResponse"
                             }
                         }
                     },
@@ -283,13 +363,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/diploma_modules_product_handler_model.ProductResponse"
+                            "$ref": "#/definitions/model.ProductResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/diploma_modules_product_handler_model.ErrorResponse"
                         }
                     }
                 }
@@ -326,13 +406,13 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/diploma_modules_product_handler_model.ProductListResponse"
+                            "$ref": "#/definitions/model.ProductListResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/gin.H"
+                            "$ref": "#/definitions/diploma_modules_product_handler_model.ErrorResponse"
                         }
                     }
                 }
@@ -340,79 +420,11 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "diploma_modules_auth_handler_model.LoginInput": {
+        "diploma_modules_auth_handler_model.ErrorResponse": {
             "type": "object",
             "properties": {
-                "password": {
-                    "type": "string",
-                    "example": "secure123"
-                },
-                "phone_number": {
-                    "type": "string",
-                    "example": "+123456789"
-                }
-            }
-        },
-        "diploma_modules_auth_handler_model.LoginResponse": {
-            "type": "object",
-            "properties": {
-                "access_token": {
+                "error": {
                     "type": "string"
-                },
-                "refresh_token": {
-                    "type": "string"
-                }
-            }
-        },
-        "diploma_modules_auth_handler_model.RegisterInput": {
-            "type": "object",
-            "properties": {
-                "confirm_password": {
-                    "type": "string",
-                    "example": "secure123"
-                },
-                "name": {
-                    "type": "string",
-                    "example": "John Doe"
-                },
-                "password": {
-                    "type": "string",
-                    "example": "secure123"
-                },
-                "phone_number": {
-                    "type": "string",
-                    "example": "+123456789"
-                }
-            }
-        },
-        "diploma_modules_auth_handler_model.RegisterResponse": {
-            "type": "object",
-            "properties": {
-                "id": {
-                    "type": "integer",
-                    "example": 1
-                }
-            }
-        },
-        "diploma_modules_cart_handler_model.AddProductToCardResponse": {
-            "type": "object",
-            "properties": {
-                "status": {
-                    "type": "string"
-                }
-            }
-        },
-        "diploma_modules_cart_handler_model.AddProductToCartInput": {
-            "type": "object",
-            "properties": {
-                "product_id": {
-                    "type": "integer"
-                },
-                "quantity": {
-                    "type": "integer"
-                },
-                "supplier_id": {
-                    "type": "integer"
                 }
             }
         },
@@ -421,23 +433,6 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "type": "string"
-                }
-            }
-        },
-        "diploma_modules_cart_handler_model.GetCartResponse": {
-            "type": "object",
-            "properties": {
-                "customer_id": {
-                    "type": "integer"
-                },
-                "suppliers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/diploma_modules_cart_handler_model.Supplier"
-                    }
-                },
-                "total": {
-                    "type": "integer"
                 }
             }
         },
@@ -495,17 +490,6 @@ const docTemplate = `{
             "properties": {
                 "error": {
                     "type": "string"
-                }
-            }
-        },
-        "diploma_modules_order_handler_model.GetOrdersResponse": {
-            "type": "object",
-            "properties": {
-                "orders": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/diploma_modules_order_handler_model.Order"
-                    }
                 }
             }
         },
@@ -577,6 +561,14 @@ const docTemplate = `{
                 }
             }
         },
+        "diploma_modules_product_handler_model.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
         "diploma_modules_product_handler_model.Product": {
             "type": "object",
             "properties": {
@@ -591,28 +583,6 @@ const docTemplate = `{
                 },
                 "name": {
                     "type": "string"
-                }
-            }
-        },
-        "diploma_modules_product_handler_model.ProductListResponse": {
-            "type": "object",
-            "properties": {
-                "product_list": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/diploma_modules_product_handler_model.Product"
-                    }
-                },
-                "total": {
-                    "type": "integer"
-                }
-            }
-        },
-        "diploma_modules_product_handler_model.ProductResponse": {
-            "type": "object",
-            "properties": {
-                "product": {
-                    "$ref": "#/definitions/diploma_modules_product_handler_model.DetailedProduct"
                 }
             }
         },
@@ -650,9 +620,131 @@ const docTemplate = `{
                 }
             }
         },
-        "gin.H": {
+        "model.AddProductToCardResponse": {
             "type": "object",
-            "additionalProperties": {}
+            "properties": {
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.AddProductToCartInput": {
+            "type": "object",
+            "properties": {
+                "product_id": {
+                    "type": "integer"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "supplier_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.GetCartResponse": {
+            "type": "object",
+            "properties": {
+                "customer_id": {
+                    "type": "integer"
+                },
+                "suppliers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_cart_handler_model.Supplier"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.GetOrdersResponse": {
+            "type": "object",
+            "properties": {
+                "orders": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_order_handler_model.Order"
+                    }
+                }
+            }
+        },
+        "model.LoginInput": {
+            "type": "object",
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "secure123"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+123456789"
+                }
+            }
+        },
+        "model.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "access_token": {
+                    "type": "string"
+                },
+                "refresh_token": {
+                    "type": "string"
+                }
+            }
+        },
+        "model.ProductListResponse": {
+            "type": "object",
+            "properties": {
+                "product_list": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.Product"
+                    }
+                },
+                "total": {
+                    "type": "integer"
+                }
+            }
+        },
+        "model.ProductResponse": {
+            "type": "object",
+            "properties": {
+                "product": {
+                    "$ref": "#/definitions/diploma_modules_product_handler_model.DetailedProduct"
+                }
+            }
+        },
+        "model.RegisterInput": {
+            "type": "object",
+            "properties": {
+                "confirm_password": {
+                    "type": "string",
+                    "example": "secure123"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "John Doe"
+                },
+                "password": {
+                    "type": "string",
+                    "example": "secure123"
+                },
+                "phone_number": {
+                    "type": "string",
+                    "example": "+123456789"
+                }
+            }
+        },
+        "model.RegisterResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "integer",
+                    "example": 1
+                }
+            }
         }
     },
     "securityDefinitions": {

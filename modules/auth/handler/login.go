@@ -18,7 +18,7 @@ import (
 // @Produce      json
 // @Param        input body modelApi.LoginInput true "Login input"
 // @Success      200  {object}  modelApi.LoginResponse
-// @Failure      401  {object}  gin.H
+// @Failure      401  {object}  modelApi.ErrorResponse
 // @Router       /api/auth/login [post]
 func (h *AuthHandler) Login(c *gin.Context) {
 	var form struct {

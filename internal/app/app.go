@@ -83,6 +83,17 @@ func (a *App) initServiceProvider(_ context.Context) error {
 func (a *App) initHTTPServer(ctx context.Context) error {
 	router := gin.Default()
 
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+	})
+	router.Use(func(c *gin.Context) {
+		corsMiddleware.HandlerFunc(c.Writer, c.Request)
+		c.Next()
+	})
+
 	docs.SwaggerInfo.BasePath = ""
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
@@ -104,18 +115,7 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 	orderHandler := a.serviceProvider.OrderHandler(ctx)
 	order.RegisterRoutes(secureGroup, orderHandler)
 
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Content-Type", "Authorization"},
-		AllowCredentials: true,
-	})
-
 	a.httpServer = router
-	a.httpServer.Use(func(c *gin.Context) {
-		corsMiddleware.HandlerFunc(c.Writer, c.Request)
-		c.Next()
-	})
 	return nil
 }
 

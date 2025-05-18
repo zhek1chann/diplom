@@ -21,7 +21,7 @@ import (
 // @Produce      json
 // @Param        input body modelApi.RegisterInput true "Register input"
 // @Success      201  {object}  modelApi.RegisterResponse
-// @Failure      400  {object}  gin.H
+// @Failure      400  {object}  modelApi.ErrorResponse
 // @Router       /api/auth/register [post]
 func (h *AuthHandler) Register(c *gin.Context) {
 

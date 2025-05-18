@@ -51,4 +51,6 @@ type ICartRepository interface {
 	UpdateCartTotal(ctx context.Context, cartID int64, total int) error
 	DeleteCart(ctx context.Context, cartID int64) error
 	GetCartItems(ctx context.Context, cartID int64) ([]model.Supplier, error)
+	DeleteCartItems(ctx context.Context, cartID int64) error
+	DeleteItem(ctx context.Context, cartID, productId, supplierId int64) error
 }

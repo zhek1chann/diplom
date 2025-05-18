@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
 
 	"github.com/jmoiron/sqlx"
@@ -64,27 +63,26 @@ func generateHashedPassword() (string, error) {
 	return string(hashedPassword), nil
 }
 
-func generateOrderAmount() int {
-	return (rand.Intn(25) + 5) * 1000
+func generateOrderAmountByIndex(index int) int {
+	orderAmounts := []int{30000, 50000, 70000, 100000, 150000}
+	return orderAmounts[index%len(orderAmounts)]
 }
 
 func insertSupplier(db *sqlx.DB, suppliers []Supplier) {
-	for _, supplier := range suppliers {
-		// Generate the phone number and hashed password for each user
+	for i, supplier := range suppliers {
 		phoneNumber := generatePhoneNumber(supplier.UserID)
 		hashedPassword, err := generateHashedPassword()
 		if err != nil {
 			log.Fatalf("Error generating password: %v", err)
 		}
 
-		// First, insert user into 'users' table
 		_, err = db.Exec(`INSERT INTO users (id, name, phone_number, hashed_password, role) 
 							VALUES ($1, $2, $3, $4, 1)`, supplier.UserID, supplier.Name, phoneNumber, hashedPassword)
 		if err != nil {
 			log.Fatalf("Error inserting user: %v", err)
 		}
-		orderAmount := generateOrderAmount()
-		// Now, insert into 'suppliers' table
+
+		orderAmount := generateOrderAmountByIndex(i)
 		_, err = db.Exec(`INSERT INTO suppliers (user_id, condition_id, name ,order_amount) 
 							VALUES ($1, $2, $3, $4)`, supplier.UserID, supplier.ConditionID, supplier.Name, orderAmount)
 		if err != nil {

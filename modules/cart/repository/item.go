@@ -103,3 +103,47 @@ func (r *cartRepo) AddItem(ctx context.Context, input *model.PutCartQuery) error
 
 	return nil
 }
+
+func (r *cartRepo) DeleteCartItems(ctx context.Context, cartID int64) error {
+	builder := sq.Delete(cartItemTable).
+		PlaceholderFormat(sq.Dollar).
+		Where(sq.Eq{ciCartIDColumn: cartID})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "cart_repository.DeleteCartItems",
+		QueryRaw: query,
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *cartRepo) DeleteItem(ctx context.Context, cartID, productId, supplierId int64) error {
+	builder := sq.Delete(cartItemTable).
+		PlaceholderFormat(sq.Dollar).
+		Where(sq.And{
+			sq.Eq{ciCartIDColumn: cartID},
+			sq.Eq{ciSupplierIDColumn: supplierId},
+			sq.Eq{ciProductIDColumn: productId},
+		})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "cart_repository.DeleteItem",
+		QueryRaw: query,
+	}
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
+	return err
+}

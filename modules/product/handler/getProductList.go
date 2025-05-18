@@ -19,7 +19,7 @@ import (
 // @Param        limit     query     int     false "Limit number of products"  // Define limit as a query parameter
 // @Param        offset    query     int     false "Offset for pagination"    // Define offset as a query parameter
 // @Success      200  {object}  modelApi.ProductListResponse
-// @Failure      400  {object}  gin.H
+// @Failure      400  {object}  modelApi.ErrorResponse
 // @Router       /api/product/list [get]
 func (h *CatalogHandler) GetProductList(c *gin.Context) {
 	// Extracting query parameters

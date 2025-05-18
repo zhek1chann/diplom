@@ -99,8 +99,15 @@ func (s *cartServ) Cart(ctx context.Context, userID int64) (*model.Cart, error) 
 			cart.Suppliers[i].OrderAmount = supplier.OrderAmount
 			cart.Suppliers[i].FreeDeliveryAmount = supplier.FreeDeliveryAmount
 			cart.Suppliers[i].DeliveryFee = supplier.DeliveryFee
-			cart.Suppliers[i].TotalAmount = getTotalSupplier(ctx, cart.Suppliers[i].ProductList)
+			cart.Suppliers[i].TotalAmount = getTotalSupplier(ctx, cart.Suppliers[i].ProductList, cart.Suppliers[i])
 		}
+
+		total := 0
+		for _, supplier := range cart.Suppliers {
+			total += supplier.TotalAmount
+		}
+		cart.Total = total
+
 		return nil
 	})
 	if err != nil {
@@ -110,10 +117,58 @@ func (s *cartServ) Cart(ctx context.Context, userID int64) (*model.Cart, error) 
 	return cart, nil
 }
 
-func getTotalSupplier(ctx context.Context, products []model.Product) int {
+func getTotalSupplier(ctx context.Context, products []model.Product, supplier model.Supplier) int {
 	total := 0
 	for _, product := range products {
 		total += product.Price * product.Quantity
 	}
+
+	if total < supplier.FreeDeliveryAmount {
+		total += supplier.DeliveryFee
+	}
+
 	return total
+}
+
+func (s *cartServ) DeleteProductFromCart(ctx context.Context, query *model.PutCartQuery) error {
+	return s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		cart, err := s.cartRepo.Cart(ctx, query.CustomerID)
+		if err != nil {
+			return err
+		}
+		query.CartID = cart.ID
+
+		existingQuantity, err := s.cartRepo.ItemQuantity(ctx, query.CartID, query.ProductID, query.SupplierID)
+		if err != nil {
+			return err
+		}
+
+		price, err := s.productService.ProductPriceBySupplier(ctx, query.ProductID, query.SupplierID)
+		if err != nil {
+			return err
+		}
+		query.Price = price
+
+		if query.Quantity >= existingQuantity {
+			itemTotal := price * existingQuantity
+			err = s.cartRepo.DeleteItem(ctx, query.CartID, query.ProductID, query.SupplierID)
+			if err != nil {
+				return err
+			}
+			cart.Total -= itemTotal
+		} else {
+			newQuantity := existingQuantity - query.Quantity
+			err = s.cartRepo.UpdateItemQuantity(ctx, query.CartID, query.ProductID, query.SupplierID, newQuantity)
+			if err != nil {
+				return err
+			}
+			itemTotal := price * query.Quantity
+			cart.Total -= itemTotal
+		}
+
+		if cart.Total < 0 {
+			cart.Total = 0
+		}
+		return s.cartRepo.UpdateCartTotal(ctx, cart.ID, cart.Total)
+	})
 }

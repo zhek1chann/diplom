@@ -1,70 +1,13 @@
 definitions:
-  diploma_modules_auth_handler_model.LoginInput:
+  diploma_modules_auth_handler_model.ErrorResponse:
     properties:
-      password:
-        example: secure123
+      error:
         type: string
-      phone_number:
-        example: "+123456789"
-        type: string
-    type: object
-  diploma_modules_auth_handler_model.LoginResponse:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
-        type: string
-    type: object
-  diploma_modules_auth_handler_model.RegisterInput:
-    properties:
-      confirm_password:
-        example: secure123
-        type: string
-      name:
-        example: John Doe
-        type: string
-      password:
-        example: secure123
-        type: string
-      phone_number:
-        example: "+123456789"
-        type: string
-    type: object
-  diploma_modules_auth_handler_model.RegisterResponse:
-    properties:
-      id:
-        example: 1
-        type: integer
-    type: object
-  diploma_modules_cart_handler_model.AddProductToCardResponse:
-    properties:
-      status:
-        type: string
-    type: object
-  diploma_modules_cart_handler_model.AddProductToCartInput:
-    properties:
-      product_id:
-        type: integer
-      quantity:
-        type: integer
-      supplier_id:
-        type: integer
     type: object
   diploma_modules_cart_handler_model.ErrorResponse:
     properties:
       error:
         type: string
-    type: object
-  diploma_modules_cart_handler_model.GetCartResponse:
-    properties:
-      customer_id:
-        type: integer
-      suppliers:
-        items:
-          $ref: '#/definitions/diploma_modules_cart_handler_model.Supplier'
-        type: array
-      total:
-        type: integer
     type: object
   diploma_modules_cart_handler_model.Product:
     properties:
@@ -102,13 +45,6 @@ definitions:
     properties:
       error:
         type: string
-    type: object
-  diploma_modules_order_handler_model.GetOrdersResponse:
-    properties:
-      orders:
-        items:
-          $ref: '#/definitions/diploma_modules_order_handler_model.Order'
-        type: array
     type: object
   diploma_modules_order_handler_model.Order:
     properties:
@@ -154,6 +90,11 @@ definitions:
           $ref: '#/definitions/diploma_modules_product_handler_model.ProductSupplier'
         type: array
     type: object
+  diploma_modules_product_handler_model.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
   diploma_modules_product_handler_model.Product:
     properties:
       id:
@@ -164,20 +105,6 @@ definitions:
         $ref: '#/definitions/diploma_modules_product_handler_model.ProductSupplier'
       name:
         type: string
-    type: object
-  diploma_modules_product_handler_model.ProductListResponse:
-    properties:
-      product_list:
-        items:
-          $ref: '#/definitions/diploma_modules_product_handler_model.Product'
-        type: array
-      total:
-        type: integer
-    type: object
-  diploma_modules_product_handler_model.ProductResponse:
-    properties:
-      product:
-        $ref: '#/definitions/diploma_modules_product_handler_model.DetailedProduct'
     type: object
   diploma_modules_product_handler_model.ProductSupplier:
     properties:
@@ -201,8 +128,88 @@ definitions:
       order_amount:
         type: integer
     type: object
-  gin.H:
-    additionalProperties: {}
+  model.AddProductToCardResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  model.AddProductToCartInput:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      supplier_id:
+        type: integer
+    type: object
+  model.GetCartResponse:
+    properties:
+      customer_id:
+        type: integer
+      suppliers:
+        items:
+          $ref: '#/definitions/diploma_modules_cart_handler_model.Supplier'
+        type: array
+      total:
+        type: integer
+    type: object
+  model.GetOrdersResponse:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/diploma_modules_order_handler_model.Order'
+        type: array
+    type: object
+  model.LoginInput:
+    properties:
+      password:
+        example: secure123
+        type: string
+      phone_number:
+        example: "+123456789"
+        type: string
+    type: object
+  model.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  model.ProductListResponse:
+    properties:
+      product_list:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.Product'
+        type: array
+      total:
+        type: integer
+    type: object
+  model.ProductResponse:
+    properties:
+      product:
+        $ref: '#/definitions/diploma_modules_product_handler_model.DetailedProduct'
+    type: object
+  model.RegisterInput:
+    properties:
+      confirm_password:
+        example: secure123
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: secure123
+        type: string
+      phone_number:
+        example: "+123456789"
+        type: string
+    type: object
+  model.RegisterResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
     type: object
 info:
   contact: {}
@@ -221,18 +228,18 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_auth_handler_model.LoginInput'
+          $ref: '#/definitions/model.LoginInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_auth_handler_model.LoginResponse'
+            $ref: '#/definitions/model.LoginResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/gin.H'
+            $ref: '#/definitions/diploma_modules_auth_handler_model.ErrorResponse'
       summary: User login
       tags:
       - auth
@@ -247,18 +254,18 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_auth_handler_model.RegisterInput'
+          $ref: '#/definitions/model.RegisterInput'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/diploma_modules_auth_handler_model.RegisterResponse'
+            $ref: '#/definitions/model.RegisterResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/gin.H'
+            $ref: '#/definitions/diploma_modules_auth_handler_model.ErrorResponse'
       summary: User registration
       tags:
       - auth
@@ -273,7 +280,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_cart_handler_model.GetCartResponse'
+            $ref: '#/definitions/model.GetCartResponse'
         "400":
           description: Bad Request
           schema:
@@ -294,14 +301,14 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_cart_handler_model.AddProductToCartInput'
+          $ref: '#/definitions/model.AddProductToCartInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_cart_handler_model.AddProductToCardResponse'
+            $ref: '#/definitions/model.AddProductToCardResponse'
         "400":
           description: Bad Request
           schema:
@@ -337,6 +344,59 @@ paths:
       summary: Process checkout operation
       tags:
       - cart
+  /api/cart/delete:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes given quantity of product by product_id and supplier_id
+        from cart
+      parameters:
+      - description: Product ID
+        in: query
+        name: product_id
+        required: true
+        type: integer
+      - description: Supplier ID
+        in: query
+        name: supplier_id
+        required: true
+        type: integer
+      - description: Quantity to delete (default 1)
+        in: query
+        name: quantity
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - ApiKeyAuth: []
+      summary: Delete product from cart
+      tags:
+      - cart
   /api/order:
     get:
       consumes:
@@ -350,7 +410,7 @@ paths:
           description: List of orders
           schema:
             items:
-              $ref: '#/definitions/diploma_modules_order_handler_model.GetOrdersResponse'
+              $ref: '#/definitions/model.GetOrdersResponse'
             type: array
         "401":
           description: 'Unauthorized: invalid or missing JWT token'
@@ -381,11 +441,11 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/diploma_modules_product_handler_model.ProductResponse'
+            $ref: '#/definitions/model.ProductResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/gin.H'
+            $ref: '#/definitions/diploma_modules_product_handler_model.ErrorResponse'
       summary: User registration
       tags:
       - product
@@ -410,11 +470,11 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_product_handler_model.ProductListResponse'
+            $ref: '#/definitions/model.ProductListResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/gin.H'
+            $ref: '#/definitions/diploma_modules_product_handler_model.ErrorResponse'
       summary: Get product list
       tags:
       - product

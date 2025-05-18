@@ -25,6 +25,10 @@ func (s *cartServ) Checkout(ctx context.Context, userID int64) (bool, error) {
 		if errTx != nil {
 			return errTx
 		}
+		errTx = s.cartRepo.DeleteCartItems(ctx, cart.ID)
+		if errTx != nil {
+			return errTx
+		}
 
 		return nil
 
@@ -33,21 +37,20 @@ func (s *cartServ) Checkout(ctx context.Context, userID int64) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return false, nil
+	return true, nil
 }
 
 func checkCartForCheckout(cart *model.Cart) bool {
 	for _, supplier := range cart.Suppliers {
 		sum := 0
 		for _, product := range supplier.ProductList {
-			if product.Quantity <= 0 {
-				return false
-			} else if product.Price <= 0 {
+			if product.Quantity <= 0 || product.Price <= 0 {
 				return false
 			}
 			sum += product.Price * product.Quantity
 		}
-		if sum < supplier.OrderAmount {
+
+		if supplier.TotalAmount < supplier.OrderAmount {
 			return false
 		}
 	}
