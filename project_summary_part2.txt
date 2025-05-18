@@ -1,0 +1,3620 @@
+modules/cart/repository/converter/cart.go
+--------------------------------------------------------------------------------
+package converter
+
+import (
+	"diploma/modules/cart/model"
+	modelRepo "diploma/modules/cart/repository/model"
+)
+
+func ToServiceCartFromRepo(input *modelRepo.Cart) *model.Cart {
+	return &model.Cart{
+		ID:         input.ID,
+		CustomerID: input.CustomerID,
+		Total:      input.Total,
+	}
+}
+
+func ToServiceSupplierFromRepo(input []modelRepo.CartItem) []model.Supplier {
+	res := make([]model.Supplier, 0, 1)
+	supplierIndex := make(map[int64]int)
+	for _, item := range input {
+		index, ok := supplierIndex[item.SupplierID]
+		if !ok {
+			index = len(res)
+			supplierIndex[item.SupplierID] = index
+			res = append(res, model.Supplier{
+				ID:          item.SupplierID,
+				ProductList: make([]model.Product, 0, 1),
+			})
+		}
+		res[index].ProductList = append(res[index].ProductList, model.Product{
+			ID:       item.ProductID,
+			Quantity: item.Quantity,
+			Price:    item.Price,
+			Name:     item.ProductName,
+			ImageUrl: item.ProductImageURL,
+		})
+	}
+	return res
+}
+
+
+modules/cart/repository/item.go
+--------------------------------------------------------------------------------
+package repository
+
+import (
+	"context"
+	"database/sql"
+	"diploma/modules/cart/model"
+	"diploma/pkg/client/db"
+	"errors"
+	"fmt"
+
+	sq "github.com/Masterminds/squirrel"
+)
+
+func (r *cartRepo) ItemQuantity(ctx context.Context, cartID, productId, supplierId int64) (int, error) {
+	builder := sq.Select(ciQuantityColumn).
+		PlaceholderFormat(sq.Dollar).
+		From(cartItemTable).
+		Where(sq.And{
+			sq.Eq{ciCartIDColumn: cartID},
+			sq.Eq{ciSupplierIDColumn: supplierId},
+			sq.Eq{ciProductIDColumn: productId},
+		})
+
+	query, args, err := builder.ToSql()
+
+	if err != nil {
+		return 0, err
+	}
+
+	q := db.Query{
+		Name:     "cart_repository.ItemQuantity",
+		QueryRaw: query,
+	}
+
+	var quantity int
+
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&quantity)
+
+	if err != nil {
+		if errors.As(sql.ErrNoRows, &err) {
+			return 0, model.ErrNoRows
+		}
+		return 0, err
+	}
+	return quantity, nil
+}
+
+func (r *cartRepo) UpdateItemQuantity(ctx context.Context, cartID, productId, supplierId int64, quantity int) error {
+	builder := sq.Update(cartItemTable).
+		PlaceholderFormat(sq.Dollar).
+		Set(ciQuantityColumn, quantity).
+		Where(sq.And{
+			sq.Eq{ciCartIDColumn: cartID},
+			sq.Eq{ciSupplierIDColumn: supplierId},
+			sq.Eq{ciProductIDColumn: productId},
+		})
+
+	query, args, err := builder.ToSql()
+
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "cart_repository.UpdateItemQuantity",
+		QueryRaw: query,
+	}
+
+	res, err := r.db.DB().ExecContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+
+	if res.RowsAffected() == 0 {
+		return fmt.Errorf("not updated item")
+	}
+	return nil
+}
+
+func (r *cartRepo) AddItem(ctx context.Context, input *model.PutCartQuery) error {
+	builder := sq.Insert(cartItemTable).
+		PlaceholderFormat(sq.Dollar).
+		Columns(ciCartIDColumn, ciSupplierIDColumn, ciProductIDColumn, ciPriceColumn, ciQuantityColumn).
+		Values(input.CartID, input.SupplierID, input.ProductID, input.Price, input.Quantity)
+
+	query, args, err := builder.ToSql()
+
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "cart_repository.AddItem",
+		QueryRaw: query,
+	}
+	res, err := r.db.DB().ExecContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	if res.RowsAffected() == 0 {
+		return fmt.Errorf("no rows inserted")
+	}
+
+	return nil
+}
+
+func (r *cartRepo) DeleteCartItems(ctx context.Context, cartID int64) error {
+	builder := sq.Delete(cartItemTable).
+		PlaceholderFormat(sq.Dollar).
+		Where(sq.Eq{ciCartIDColumn: cartID})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "cart_repository.DeleteCartItems",
+		QueryRaw: query,
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *cartRepo) DeleteItem(ctx context.Context, cartID, productId, supplierId int64) error {
+	builder := sq.Delete(cartItemTable).
+		PlaceholderFormat(sq.Dollar).
+		Where(sq.And{
+			sq.Eq{ciCartIDColumn: cartID},
+			sq.Eq{ciSupplierIDColumn: supplierId},
+			sq.Eq{ciProductIDColumn: productId},
+		})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "cart_repository.DeleteItem",
+		QueryRaw: query,
+	}
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
+	return err
+}
+
+
+modules/cart/repository/model/get-cart.go
+--------------------------------------------------------------------------------
+package model
+
+type Cart struct {
+	ID         int64
+	CustomerID int64
+	Total      int
+	Items      []CartItem
+}
+
+type CartItem struct {
+	ID              int64
+	ProductID       int64
+	ProductName     string
+	ProductImageURL string
+	SupplierID      int64
+	Quantity        int
+	Price           int
+}
+
+
+modules/cart/repository/repository.go
+--------------------------------------------------------------------------------
+package repository
+
+import "diploma/pkg/client/db"
+
+const (
+	cartsTable = "carts"
+
+	cIDColumn         = "id"
+	cTotalColumn      = "total"
+	cCustomerIDColumn = "customer_id"
+	cCreatedAtColumn  = "created_at"
+	cUpdatedAtColumn  = "updated_at"
+
+	//============= cart_items table columns =============
+	cartItemTable      = "cart_items"
+	ciID               = "id"
+	ciCartIDColumn     = "cart_id"
+	ciSupplierIDColumn = "supplier_id"
+	ciProductIDColumn  = "product_id"
+	ciQuantityColumn   = "quantity"
+	ciPriceColumn      = "price"
+
+	//============= cart_items_suppliers table columns =============
+	productsTable  = "products"
+	imageURLColumn = "image_url"
+	nameColumn     = "name"
+)
+
+type cartRepo struct {
+	db db.Client
+}
+
+func NewRepository(db db.Client) *cartRepo {
+	return &cartRepo{db: db}
+}
+
+
+modules/cart/routes.go
+--------------------------------------------------------------------------------
+package cart
+
+import (
+	"diploma/modules/cart/handler"
+
+	"github.com/gin-gonic/gin"
+)
+
+func RegisterRoutes(router *gin.RouterGroup, h *handler.CartHandler) {
+	cardRoutes := router.Group("/cart")
+	{
+		cardRoutes.POST("/add", h.AddProductToCard)
+		cardRoutes.GET("/", h.GetCart)
+		cardRoutes.POST("/checkout", h.Checkout)
+		cardRoutes.DELETE("/delete", h.DeleteProductFromCart)
+
+	}
+
+}
+
+
+modules/cart/service/cart.go
+--------------------------------------------------------------------------------
+package service
+
+import (
+	"context"
+	"diploma/modules/cart/model"
+	"errors"
+)
+
+func (s *cartServ) AddProductToCard(ctx context.Context, query *model.PutCartQuery) error {
+	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		cart, errTx := s.cartRepo.Cart(ctx, query.CustomerID)
+
+		if errTx != nil {
+			if errors.Is(errTx, model.ErrNoRows) {
+				id, errTx := s.cartRepo.CreateCart(ctx, query.CustomerID)
+				if errTx != nil {
+					return errTx
+				}
+				cart = &model.Cart{
+					ID:    id,
+					Total: 0,
+				}
+			} else {
+				return errTx
+
+			}
+		}
+		query.CartID = cart.ID
+
+		query.Price, errTx = s.productService.ProductPriceBySupplier(ctx, query.ProductID, query.SupplierID)
+		if errTx != nil {
+			return errTx
+		}
+
+		itemQuantity, errTx := s.cartRepo.ItemQuantity(ctx, query.CartID, query.ProductID, query.SupplierID)
+
+		if errTx != nil {
+			if errors.Is(errTx, model.ErrNoRows) {
+				errTx = s.cartRepo.AddItem(ctx, query)
+				if errTx != nil {
+					return errTx
+				}
+			} else {
+				return errTx
+			}
+		} else {
+
+			errTx = s.cartRepo.UpdateItemQuantity(ctx, query.CartID, query.ProductID, query.SupplierID, itemQuantity+query.Quantity)
+			if errTx != nil {
+				return errTx
+			}
+		}
+
+		cart.Total += query.Price * query.Quantity
+		errTx = s.cartRepo.UpdateCartTotal(ctx, cart.ID, cart.Total)
+		if errTx != nil {
+			return errTx
+		}
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *cartServ) Cart(ctx context.Context, userID int64) (*model.Cart, error) {
+	var err error
+	var cart *model.Cart
+	err = s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		var errTx error
+		cart, errTx = s.cartRepo.Cart(ctx, userID)
+		if errTx != nil {
+			if errors.Is(errTx, model.ErrNoRows) {
+				return model.ErrNoRows
+			}
+			return errTx
+		}
+		cart.Suppliers, errTx = s.cartRepo.GetCartItems(ctx, cart.ID)
+		if errTx != nil {
+			if errors.Is(errTx, model.ErrNoRows) {
+				return model.ErrNoRows
+			}
+			return errTx
+		}
+
+		supplierIdList := make([]int64, 0, len(cart.Suppliers))
+		for _, supplier := range cart.Suppliers {
+			supplierIdList = append(supplierIdList, supplier.ID)
+		}
+
+		suppliers, errTx := s.supplierService.SupplierListByIDList(ctx, supplierIdList)
+		if errTx != nil {
+			return errTx
+		}
+
+		for i, supplier := range suppliers {
+			cart.Suppliers[i].Name = supplier.Name
+			cart.Suppliers[i].OrderAmount = supplier.OrderAmount
+			cart.Suppliers[i].FreeDeliveryAmount = supplier.FreeDeliveryAmount
+			cart.Suppliers[i].DeliveryFee = supplier.DeliveryFee
+			cart.Suppliers[i].TotalAmount = getTotalSupplier(ctx, cart.Suppliers[i].ProductList, cart.Suppliers[i])
+		}
+
+		total := 0
+		for _, supplier := range cart.Suppliers {
+			total += supplier.TotalAmount
+		}
+		cart.Total = total
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return cart, nil
+}
+
+func getTotalSupplier(ctx context.Context, products []model.Product, supplier model.Supplier) int {
+	total := 0
+	for _, product := range products {
+		total += product.Price * product.Quantity
+	}
+
+	if total < supplier.FreeDeliveryAmount {
+		total += supplier.DeliveryFee
+	}
+
+	return total
+}
+
+func (s *cartServ) DeleteProductFromCart(ctx context.Context, query *model.PutCartQuery) error {
+	return s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		cart, err := s.cartRepo.Cart(ctx, query.CustomerID)
+		if err != nil {
+			return err
+		}
+		query.CartID = cart.ID
+
+		existingQuantity, err := s.cartRepo.ItemQuantity(ctx, query.CartID, query.ProductID, query.SupplierID)
+		if err != nil {
+			return err
+		}
+
+		price, err := s.productService.ProductPriceBySupplier(ctx, query.ProductID, query.SupplierID)
+		if err != nil {
+			return err
+		}
+		query.Price = price
+
+		if query.Quantity >= existingQuantity {
+			itemTotal := price * existingQuantity
+			err = s.cartRepo.DeleteItem(ctx, query.CartID, query.ProductID, query.SupplierID)
+			if err != nil {
+				return err
+			}
+			cart.Total -= itemTotal
+		} else {
+			newQuantity := existingQuantity - query.Quantity
+			err = s.cartRepo.UpdateItemQuantity(ctx, query.CartID, query.ProductID, query.SupplierID, newQuantity)
+			if err != nil {
+				return err
+			}
+			itemTotal := price * query.Quantity
+			cart.Total -= itemTotal
+		}
+
+		if cart.Total < 0 {
+			cart.Total = 0
+		}
+		return s.cartRepo.UpdateCartTotal(ctx, cart.ID, cart.Total)
+	})
+}
+
+
+modules/cart/service/checkout.go
+--------------------------------------------------------------------------------
+package service
+
+import (
+	"context"
+	"diploma/modules/cart/model"
+)
+
+func (s *cartServ) Checkout(ctx context.Context, userID int64) (bool, error) {
+
+	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		cart, errTx := s.Cart(ctx, userID)
+		if errTx != nil {
+			return errTx
+		}
+		cart.CustomerID = userID
+		if !checkCartForCheckout(cart) {
+			return model.ErrInvalidCart
+		}
+
+		errTx = s.orderService.CreateOrder(ctx, cart)
+		if errTx != nil {
+			return errTx
+		}
+		errTx = s.cartRepo.DeleteCart(ctx, cart.ID)
+		if errTx != nil {
+			return errTx
+		}
+		errTx = s.cartRepo.DeleteCartItems(ctx, cart.ID)
+		if errTx != nil {
+			return errTx
+		}
+
+		return nil
+
+	})
+
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+func checkCartForCheckout(cart *model.Cart) bool {
+	for _, supplier := range cart.Suppliers {
+		sum := 0
+		for _, product := range supplier.ProductList {
+			if product.Quantity <= 0 || product.Price <= 0 {
+				return false
+			}
+			sum += product.Price * product.Quantity
+		}
+
+		if supplier.TotalAmount < supplier.OrderAmount {
+			return false
+		}
+	}
+	return true
+}
+
+
+modules/cart/service/service.go
+--------------------------------------------------------------------------------
+package service
+
+import (
+	"context"
+	"diploma/modules/cart/model"
+	"diploma/pkg/client/db"
+)
+
+type cartServ struct {
+	cartRepo        ICartRepository
+	productService  IProductService
+	supplierService ISupplierClient
+	orderService    IOrderClient
+	txManager       db.TxManager
+}
+
+func NewService(
+	cartRepository ICartRepository,
+	productService IProductService,
+	supplierService ISupplierClient,
+	OrderClient IOrderClient,
+	txManager db.TxManager,
+) *cartServ {
+	return &cartServ{
+		cartRepo:        cartRepository,
+		supplierService: supplierService,
+		orderService:    OrderClient,
+		txManager:       txManager,
+		productService:  productService,
+	}
+}
+
+type IProductService interface {
+	ProductPriceBySupplier(ctx context.Context, productID, supplierID int64) (int, error)
+}
+
+type ISupplierClient interface {
+	SupplierListByIDList(ctx context.Context, IDList []int64) ([]model.Supplier, error)
+}
+
+type IOrderClient interface {
+	CreateOrder(ctx context.Context, cart *model.Cart) error
+}
+
+type ICartRepository interface {
+	UpdateItemQuantity(ctx context.Context, cartId, productId, supplierId int64, quantity int) error
+	ItemQuantity(ctx context.Context, cartId, productId, supplierId int64) (int, error)
+	Cart(ctx context.Context, userID int64) (*model.Cart, error)
+	CreateCart(ctx context.Context, userID int64) (int64, error)
+	AddItem(ctx context.Context, input *model.PutCartQuery) error
+	UpdateCartTotal(ctx context.Context, cartID int64, total int) error
+	DeleteCart(ctx context.Context, cartID int64) error
+	GetCartItems(ctx context.Context, cartID int64) ([]model.Supplier, error)
+	DeleteCartItems(ctx context.Context, cartID int64) error
+	DeleteItem(ctx context.Context, cartID, productId, supplierId int64) error
+}
+
+
+modules/order/client/product/product.go
+--------------------------------------------------------------------------------
+package product
+
+import (
+	"context"
+	"diploma/modules/order/model"
+	clientModel "diploma/modules/product/model"
+)
+
+type ProductClient struct {
+	supplierService IProductSerivce
+}
+
+func NewClient(supplierService IProductSerivce) *ProductClient {
+	return &ProductClient{supplierService: supplierService}
+}
+
+type IProductSerivce interface {
+	ProductInfo(ctx context.Context, id int64) (*clientModel.Product, error)
+}
+
+func (a *ProductClient) Product(ctx context.Context, id int64) (*model.Product, error) {
+	product, err := a.supplierService.ProductInfo(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	// Convert clientModel.Product to model.Product
+	return &model.Product{
+		ID:       product.ID,
+		Name:     product.Name,
+		ImageUrl: product.ImageUrl,
+	}, nil
+
+}
+
+
+modules/order/client/supplier/supplier.go
+--------------------------------------------------------------------------------
+package supplier
+
+import (
+	"context"
+	"diploma/modules/order/model"
+	supplierModel "diploma/modules/supplier/model"
+)
+
+type SupplierClient struct {
+	supplierService ISupplierService
+}
+
+func NewClient(supplierService ISupplierService) *SupplierClient {
+	return &SupplierClient{supplierService: supplierService}
+}
+
+type ISupplierService interface {
+	SupplierListByIDList(ctx context.Context, idList []int64) ([]supplierModel.Supplier, error)
+}
+
+func (a *SupplierClient) SupplierListByIDList(ctx context.Context, IDList []int64) ([]model.Supplier, error) {
+
+	suppliers, err := a.supplierService.SupplierListByIDList(ctx, IDList)
+	if err != nil {
+		return nil, err
+	}
+	var res []model.Supplier
+	for _, supplier := range suppliers {
+		res = append(res, model.Supplier{
+			ID:                 supplier.ID,
+			Name:               supplier.Name,
+			OrderAmount:        supplier.OrderAmount,
+			DeliveryFee:        supplier.DeliveryFee,
+			FreeDeliveryAmount: supplier.FreeDeliveryAmount,
+		})
+	}
+	return res, nil
+}
+
+func (a *SupplierClient) Supplier(ctx context.Context, id int64) (*model.Supplier, error) {
+	supplier, err := a.supplierService.SupplierListByIDList(ctx, []int64{id})
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.Supplier{
+		ID:                 supplier[0].ID,
+		Name:               supplier[0].Name,
+		OrderAmount:        supplier[0].OrderAmount,
+		DeliveryFee:        supplier[0].DeliveryFee,
+		FreeDeliveryAmount: supplier[0].FreeDeliveryAmount,
+	}, nil
+}
+
+
+modules/order/handler/converter/order.go
+--------------------------------------------------------------------------------
+package converter
+
+import (
+	apiModel "diploma/modules/order/handler/model"
+	serviceModel "diploma/modules/order/model"
+)
+
+// ConvertOrderToAPI converts service Order model to API Order response
+func ConvertOrderToAPI(order *serviceModel.Order) *apiModel.Order {
+	return &apiModel.Order{
+		ID:        order.ID,
+		Status:    convertStatusIDToString(order.StatusID),
+		OrderDate: order.OrderDate.Format("2006-01-02T15:04:05Z07:00"),
+		Supplier: &apiModel.Supplier{
+			ID:   order.Supplier.ID,
+			Name: order.Supplier.Name,
+		},
+		ProductList: convertOrderProductsToAPI(order.ProductList),
+	}
+}
+
+// convertOrderProductsToAPI converts a slice of OrderProduct to a slice of Product for API response
+func convertOrderProductsToAPI(products []*serviceModel.OrderProduct) []*apiModel.Product {
+	apiProducts := make([]*apiModel.Product, len(products))
+	for i, p := range products {
+		apiProducts[i] = &apiModel.Product{
+			ID:       p.Product.ID,
+			Name:     p.Product.Name,
+			ImageUrl: p.Product.ImageUrl,
+			Quantity: p.Quantity,
+			Price:    p.Price,
+		}
+	}
+	return apiProducts
+}
+
+// convertStatusIDToString converts a status ID to a string representation
+func convertStatusIDToString(statusID int) string {
+	switch statusID {
+	case serviceModel.Pending:
+		return "Pending"
+	case serviceModel.InProgress:
+		return "In Progress"
+	case serviceModel.Completed:
+		return "Completed"
+	case serviceModel.Cancelled:
+		return "Cancelled"
+	default:
+		return "Unknown"
+	}
+}
+
+// ConvertOrdersToAPI converts multiple service Order models to an API response
+func ConvertOrdersToAPI(orders []*serviceModel.Order) *apiModel.GetOrdersResponse {
+	apiOrders := make([]apiModel.Order, len(orders))
+	for i, order := range orders {
+		apiOrders[i] = *ConvertOrderToAPI(order)
+	}
+	return &apiModel.GetOrdersResponse{
+		Orders: apiOrders,
+	}
+}
+
+
+modules/order/handler/handler.go
+--------------------------------------------------------------------------------
+package handler
+
+import "context"
+
+type OrderHandler struct {
+	service IOrderService
+}
+
+func NewHandler(service IOrderService) *OrderHandler {
+	return &OrderHandler{service: service}
+}
+
+type IOrderService interface {
+	ICreateOrderService
+	UpdateOrderStatusBySupplier(ctx context.Context, supplierID int64, orderID int64, newStatusID int) error
+}
+
+
+modules/order/handler/model/order.go
+--------------------------------------------------------------------------------
+package model
+
+import "errors"
+
+var (
+	ErrUnauthorized = errors.New("api: unauthorized")
+)
+
+type ErrorResponse struct {
+	Err string `json:"error"`
+}
+
+type GetOrdersResponse struct {
+	Orders []Order `json:"orders"`
+}
+
+type Order struct {
+	ID          int64      `json:"id"`
+	Status      string     `json:"status"`
+	OrderDate   string     `json:"order_date"`
+	Supplier    *Supplier  `json:"supplier"`
+	ProductList []*Product `json:"product_list"`
+}
+type Product struct {
+	ID       int64  `json:"id"`
+	Name     string `json:"name"`
+	ImageUrl string `json:"image"`
+	Quantity int    `json:"quantity"`
+	Price    int    `json:"price"`
+}
+type Supplier struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+type UpdateOrderStatusRequest struct {
+	OrderID     int64 `json:"order_id" binding:"required"`
+	NewStatusID int   `json:"new_status_id" binding:"required"`
+}
+
+
+modules/order/handler/order.go
+--------------------------------------------------------------------------------
+package handler
+
+import (
+	"context"
+	"diploma/modules/auth/jwt"
+	"diploma/modules/order/handler/converter"
+	modelApi "diploma/modules/order/handler/model"
+	"diploma/modules/order/model"
+	contextkeys "diploma/pkg/context-keys"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+type ICreateOrderService interface {
+	Orders(ctx context.Context, userID int64, role int) ([]*model.Order, error)
+	// CreateOrder(userID int64) error
+}
+
+// GetOrders godoc
+// @Summary Retrieve orders for a user
+// @Description Retrieves orders for the authenticated user using the provided JWT claims.
+// @Tags orders
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Success 200 {array} modelApi.GetOrdersResponse "List of orders"
+// @Failure 401 {object} modelApi.ErrorResponse "Unauthorized: invalid or missing JWT token"
+// @Failure 500 {object} modelApi.ErrorResponse "Internal server error while retrieving orders"
+// @Router /api/order [get]
+func (h *OrderHandler) GetOrders(c *gin.Context) {
+	claims, ok := c.Request.Context().Value(contextkeys.UserKey).(*jwt.Claims)
+
+	if !ok {
+		c.JSON(http.StatusUnauthorized, modelApi.ErrorResponse{Err: modelApi.ErrUnauthorized.Error()})
+		return
+	}
+
+	// Retrieve the orders for the authenticated user
+	orders, err := h.service.Orders(c.Request.Context(), claims.UserID, claims.Role)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, modelApi.ErrorResponse{Err: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, converter.ConvertOrdersToAPI(orders))
+}
+
+// UpdateOrderStatus godoc
+// @Summary Update order status by supplier
+// @Description Supplier updates the status of their order
+// @Tags orders
+// @Security ApiKeyAuth
+// @Accept json
+// @Produce json
+// @Param input body modelApi.UpdateOrderStatusRequest true "Order ID and New Status"
+// @Success 200 {object} map[string]string "status updated"
+// @Failure 400 {object} modelApi.ErrorResponse "Invalid input"
+// @Failure 401 {object} modelApi.ErrorResponse "Unauthorized"
+// @Failure 500 {object} modelApi.ErrorResponse "Internal error"
+// @Router /api/order/status [post]
+func (h *OrderHandler) UpdateOrderStatus(c *gin.Context) {
+	claims, ok := c.Request.Context().Value(contextkeys.UserKey).(*jwt.Claims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, modelApi.ErrorResponse{Err: modelApi.ErrUnauthorized.Error()})
+		return
+	}
+
+	if claims.Role != model.SupplierRole {
+		c.JSON(http.StatusUnauthorized, modelApi.ErrorResponse{Err: "only suppliers can update orders"})
+		return
+	}
+
+	var req modelApi.UpdateOrderStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, modelApi.ErrorResponse{Err: err.Error()})
+		return
+	}
+
+	err := h.service.UpdateOrderStatusBySupplier(c.Request.Context(), claims.UserID, req.OrderID, req.NewStatusID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, modelApi.ErrorResponse{Err: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "order status updated"})
+}
+
+// CreateOrder godoc
+// @Summary Create a new order
+// @Description Creates an order for the authenticated user using the provided JWT claims.
+// @Tags orders
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "Order created successfully"
+// @Failure 401 {object} modelApi.ErrorResponse "Unauthorized: invalid or missing JWT token"
+// @Failure 500 {object} modelApi.ErrorResponse "Internal server error while creating order"
+// @Router /order/create [post]
+// func (h *OrderHandler) CreateOrder(c *gin.Context) {
+// 	// Extract the order details from the request
+// 	claims, ok := c.Request.Context().Value(contextkeys.UserKey).(*jwt.Claims)
+
+// 	if !ok {
+// 		c.JSON(http.StatusUnauthorized, modelApi.ErrorResponse{Err: modelApi.ErrUnauthorized.Error()})
+// 		return
+// 	}
+// 	err := h.service.CreateOrder(claims.UserID)
+// 	if err != nil {
+// 		c.JSON(http.StatusInternalServerError, modelApi.ErrorResponse{Err: err.Error()})
+// 		return
+// 	}
+// 	c.JSON(200, gin.H{
+// 		"message": "Order created successfully",
+// 	})
+// }
+
+
+modules/order/model/errors.go
+--------------------------------------------------------------------------------
+package model
+
+import "errors"
+
+var (
+	ErrInvalidCredentials = errors.New("models: invalid credentials")
+
+	ErrDuplicateNumber = errors.New("models: duplicate email")
+
+	ErrNoRows = errors.New("models: no rows")
+)
+
+
+modules/order/model/order.go
+--------------------------------------------------------------------------------
+package model
+
+import "time"
+
+const (
+	temp = iota
+	Pending
+	InProgress
+	Completed
+	Cancelled
+)
+
+type Order struct {
+	ID          int64
+	CustomerID  int64
+	SupplierID  int64
+	StatusID    int
+	OrderDate   time.Time
+	ProductList []*OrderProduct
+
+	Supplier *Supplier
+}
+
+type OrderProduct struct {
+	Quantity  int
+	Price     int
+	OrderID   int64
+	ProductID int64
+	Product   *Product
+}
+
+type Product struct {
+	ID          int64
+	Name        string
+	Description string
+	ImageUrl    string
+}
+
+type Supplier struct {
+	ID                 int64
+	Name               string
+	OrderAmount        int
+	FreeDeliveryAmount int
+	DeliveryFee        int
+}
+
+
+modules/order/model/role.go
+--------------------------------------------------------------------------------
+package model
+
+const (
+	CustomerRole = iota
+	SupplierRole
+	AdminRole
+)
+
+
+modules/order/repo/converter/order-product.go
+--------------------------------------------------------------------------------
+package converter
+
+import (
+	"diploma/modules/order/model"
+	modelRepo "diploma/modules/order/repo/model"
+)
+
+func ToServiceOrderProductFromRepo(op modelRepo.OrderProduct) *model.OrderProduct {
+	return &model.OrderProduct{
+		Quantity:  op.Quantity,
+		Price:     op.Price,
+		OrderID:   op.OrderID,
+		ProductID: op.ProductID,
+	}
+}
+
+func ToServiceOrderFromRepo(o *modelRepo.Order) *model.Order {
+	return &model.Order{
+		ID:         o.ID,
+		CustomerID: o.CustomerID,
+		SupplierID: o.SupplierID,
+		StatusID:   o.StatusID,
+		OrderDate:  o.OrderDate,
+	}
+}
+
+
+modules/order/repo/converter/order.go
+--------------------------------------------------------------------------------
+package converter
+
+
+modules/order/repo/model/order-product.go
+--------------------------------------------------------------------------------
+package model
+
+type OrderProduct struct {
+	Quantity  int
+	Price     int
+	OrderID   int64
+	ProductID int64
+}
+
+
+modules/order/repo/model/order.go
+--------------------------------------------------------------------------------
+package model
+
+import "time"
+
+type Order struct {
+	ID         int64
+	SupplierID int64
+	CustomerID int64
+	StatusID   int
+	OrderDate  time.Time
+}
+
+
+modules/order/repo/order-product.go
+--------------------------------------------------------------------------------
+package repository
+
+import (
+	"context"
+	"diploma/modules/order/model"
+	"diploma/modules/order/repo/converter"
+	modelRepo "diploma/modules/order/repo/model"
+	"diploma/pkg/client/db"
+	"fmt"
+
+	sq "github.com/Masterminds/squirrel"
+)
+
+const (
+	orderProductsTable = "order_products"
+	opOrderIDColumn    = "order_id"
+	opProductIDColumn  = "product_id"
+	opQuantityColumn   = "quantity"
+	opPriceColumn      = "price"
+)
+
+// CreateOrderProduct inserts a new order-product relationship.
+func (r *OrderRepo) CreateOrderProduct(ctx context.Context, orderProduct *model.OrderProduct) error {
+	builder := sq.
+		Insert(orderProductsTable).
+		PlaceholderFormat(sq.Dollar).
+		Columns(opOrderIDColumn, opProductIDColumn, opQuantityColumn, opPriceColumn).
+		Values(orderProduct.OrderID, orderProduct.ProductID, orderProduct.Quantity, orderProduct.Price)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.CreateOrderProduct",
+		QueryRaw: query,
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// GetOrderProducts retrieves all products for a specific order.
+func (r *OrderRepo) OrderProducts(ctx context.Context, orderID int64) ([]*model.OrderProduct, error) {
+	builder := sq.
+		Select(opOrderIDColumn, opProductIDColumn, opQuantityColumn, opPriceColumn).
+		PlaceholderFormat(sq.Dollar).
+		From(orderProductsTable).
+		Where(sq.Eq{opOrderIDColumn: orderID})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.GetOrderProducts",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orderProducts []*model.OrderProduct
+	for rows.Next() {
+		var op modelRepo.OrderProduct
+		err := rows.Scan(
+			&op.OrderID,
+			&op.ProductID,
+			&op.Quantity,
+			&op.Price,
+		)
+		if err != nil {
+			return nil, err
+		}
+		orderProducts = append(orderProducts, converter.ToServiceOrderProductFromRepo(op))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return orderProducts, nil
+}
+
+// UpdateOrderProduct modifies an existing order-product relationship.
+func (r *OrderRepo) UpdateOrderProduct(ctx context.Context, orderProduct *model.OrderProduct) error {
+	builder := sq.
+		Update(orderProductsTable).
+		PlaceholderFormat(sq.Dollar).
+		Set(opQuantityColumn, orderProduct.Quantity).
+		Set(opPriceColumn, orderProduct.Price).
+		Where(sq.And{
+			sq.Eq{opOrderIDColumn: orderProduct.OrderID},
+			sq.Eq{opProductIDColumn: orderProduct.ProductID},
+		})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.UpdateOrderProduct",
+		QueryRaw: query,
+	}
+
+	result, err := r.db.DB().ExecContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("no rows updated")
+	}
+	return nil
+}
+
+// DeleteOrderProduct removes an order-product relationship.
+func (r *OrderRepo) DeleteOrderProduct(ctx context.Context, orderID, productID, supplierID int64) error {
+	builder := sq.
+		Delete(orderProductsTable).
+		PlaceholderFormat(sq.Dollar).
+		Where(sq.And{
+			sq.Eq{opOrderIDColumn: orderID},
+			sq.Eq{opProductIDColumn: productID},
+		})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.DeleteOrderProduct",
+		QueryRaw: query,
+	}
+
+	result, err := r.db.DB().ExecContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf("no rows deleted")
+	}
+	return nil
+}
+
+
+modules/order/repo/order.go
+--------------------------------------------------------------------------------
+package repository
+
+import (
+	"context"
+	"diploma/modules/order/model"
+	"diploma/modules/order/repo/converter"
+	modelRepo "diploma/modules/order/repo/model"
+	"diploma/pkg/client/db"
+
+	sq "github.com/Masterminds/squirrel"
+)
+
+const (
+	ordersTable       = "orders"
+	oIDColumn         = "id"
+	oCustomerIDColumn = "customer_id"
+	oOrderDateColumn  = "order_date"
+	oSupplierIDColumn = "supplier_id"
+	oStatusIDColumn   = "status_id"
+)
+
+// CreateOrder inserts a new order record and returns its id.
+func (r *OrderRepo) CreateOrder(ctx context.Context, order *model.Order) (int64, error) {
+	builder := sq.
+		Insert(ordersTable).
+		PlaceholderFormat(sq.Dollar).
+		Columns(oCustomerIDColumn, oSupplierIDColumn, oOrderDateColumn, oStatusIDColumn).
+		Values(order.CustomerID, order.SupplierID, order.OrderDate, order.StatusID).
+		Suffix("RETURNING " + oIDColumn)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return 0, err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.CreateOrder",
+		QueryRaw: query,
+	}
+
+	var orderID int64
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&orderID)
+	if err != nil {
+		return 0, err
+	}
+	return orderID, nil
+}
+
+// GetOrder retrieves an order by its id.
+func (r *OrderRepo) OrdersByUserID(ctx context.Context, userID int64) ([]*model.Order, error) {
+	builder := sq.
+		Select(oIDColumn, oCustomerIDColumn, oOrderDateColumn, oSupplierIDColumn, oStatusIDColumn).
+		PlaceholderFormat(sq.Dollar).
+		From(ordersTable).
+		Where(sq.Eq{oCustomerIDColumn: userID})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.OrdersByUserID",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*model.Order
+	for rows.Next() {
+		var orderRepo modelRepo.Order
+		if err := rows.Scan(
+			&orderRepo.ID,
+			&orderRepo.CustomerID,
+			&orderRepo.OrderDate,
+			&orderRepo.SupplierID,
+			&orderRepo.StatusID,
+		); err != nil {
+			return nil, err
+		}
+		orders = append(orders, converter.ToServiceOrderFromRepo(&orderRepo))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(orders) == 0 {
+		return nil, model.ErrNoRows
+	}
+	return orders, nil
+}
+
+// GetOrdersBySupplierID retrieves a list of orders by supplier id.
+func (r *OrderRepo) OrdersBySupplierID(ctx context.Context, supplierID int64) ([]*model.Order, error) {
+	builder := sq.
+		Select(oIDColumn, oCustomerIDColumn, oOrderDateColumn, oSupplierIDColumn, oStatusIDColumn).
+		PlaceholderFormat(sq.Dollar).
+		From(ordersTable).
+		Where(sq.Eq{oSupplierIDColumn: supplierID})
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.GetOrdersBySupplierID",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var orders []*model.Order
+	for rows.Next() {
+		var orderRepo modelRepo.Order
+		if err := rows.Scan(
+			&orderRepo.ID,
+			&orderRepo.CustomerID,
+			&orderRepo.OrderDate,
+			&orderRepo.SupplierID,
+			&orderRepo.StatusID,
+		); err != nil {
+			return nil, err
+		}
+		orders = append(orders, converter.ToServiceOrderFromRepo(&orderRepo))
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	if len(orders) == 0 {
+		return nil, model.ErrNoRows
+	}
+	return orders, nil
+}
+
+func (r *OrderRepo) GetOrderByID(ctx context.Context, orderID int64) (*model.Order, error) {
+	builder := sq.
+		Select(oIDColumn, oCustomerIDColumn, oOrderDateColumn, oSupplierIDColumn, oStatusIDColumn).
+		From(ordersTable).
+		Where(sq.Eq{oIDColumn: orderID}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.GetOrderByID",
+		QueryRaw: query,
+	}
+
+	var order modelRepo.Order
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(
+		&order.ID,
+		&order.CustomerID,
+		&order.OrderDate,
+		&order.SupplierID,
+		&order.StatusID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return converter.ToServiceOrderFromRepo(&order), nil
+}
+
+func (r *OrderRepo) UpdateOrderStatus(ctx context.Context, orderID int64, newStatus int) error {
+	builder := sq.
+		Update(ordersTable).
+		Set(oStatusIDColumn, newStatus).
+		Where(sq.Eq{oIDColumn: orderID}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.UpdateOrderStatus",
+		QueryRaw: query,
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
+	return err
+}
+
+// UpdateOrder modifies an existing order record.
+// func (r *OrderRepo) UpdateOrder(ctx context.Context, order *model.Order) error {
+// 	builder := sq.
+// 		Update(ordersTable).
+// 		PlaceholderFormat(sq.Dollar).
+// 		Set(oCustomerIDColumn, order.CustomerID).
+// 		Set(oOrderDateColumn, order.OrderDate).
+
+// 	query, args, err := builder.ToSql()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	q := db.Query{
+// 		Name:     "order_repository.UpdateOrder",
+// 		QueryRaw: query,
+// 	}
+
+// 	result, err := r.db.DB().ExecContext(ctx, q, args...)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if affected, _ := result.RowsAffected(); affected == 0 {
+// 		return fmt.Errorf("no rows updated")
+// 	}
+// 	return nil
+// }
+
+// DeleteOrder removes an order record by its id.
+// func (r *OrderRepo) DeleteOrder(ctx context.Context, id int64) error {
+// 	builder := sq.
+// 		Delete(ordersTable).
+// 		PlaceholderFormat(sq.Dollar).
+// 		Where(sq.Eq{oIDColumn: id})
+
+// 	query, args, err := builder.ToSql()
+// 	if err != nil {
+// 		return err
+// 	}
+
+// 	q := db.Query{
+// 		Name:     "order_repository.DeleteOrder",
+// 		QueryRaw: query,
+// 	}
+
+// 	result, err := r.db.DB().ExecContext(ctx, q, args...)
+// 	if err != nil {
+// 		return err
+// 	}
+// 	if affected, _ := result.RowsAffected(); affected == 0 {
+// 		return fmt.Errorf("no rows deleted")
+// 	}
+// 	return nil
+// }
+
+
+modules/order/repo/repo.go
+--------------------------------------------------------------------------------
+package repository
+
+import "diploma/pkg/client/db"
+
+type OrderRepo struct {
+	db db.Client
+}
+
+const (
+	// ======== supplier table ========
+
+)
+
+func NewRepository(db db.Client) *OrderRepo {
+	return &OrderRepo{db: db}
+}
+
+
+modules/order/routes.go
+--------------------------------------------------------------------------------
+package order
+
+import (
+	"diploma/modules/order/handler"
+
+	"github.com/gin-gonic/gin"
+)
+
+func RegisterRoutes(router *gin.RouterGroup, h *handler.OrderHandler) {
+	orderRoutes := router.Group("/order")
+	{
+		// orderRoutes.POST("", h.CreateOrder)
+		orderRoutes.GET("", h.GetOrders)
+		orderRoutes.POST("/status", h.UpdateOrderStatus)
+
+	}
+}
+
+
+modules/order/service/order.go
+--------------------------------------------------------------------------------
+package service
+
+import (
+	"context"
+	"diploma/modules/order/model"
+	"fmt"
+	"time"
+)
+
+type IOrderRepo interface {
+	OrdersByUserID(ctx context.Context, userID int64) ([]*model.Order, error)
+	OrdersBySupplierID(ctx context.Context, supplierID int64) ([]*model.Order, error)
+	OrderProducts(ctx context.Context, orderID int64) ([]*model.OrderProduct, error)
+}
+
+func (s *OrderService) Orders(ctx context.Context, userID int64, role int) ([]*model.Order, error) {
+	// Retrieve the orders for the user
+	var orders []*model.Order
+	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		var errTx error
+		switch role {
+		case model.CustomerRole:
+			orders, errTx = s.orderRepo.OrdersByUserID(ctx, userID)
+			if errTx != nil {
+				return errTx
+			}
+			for _, order := range orders {
+				order.Supplier, errTx = s.supplierClient.Supplier(ctx, order.SupplierID)
+
+				if errTx != nil {
+					return errTx
+				}
+				order.Supplier.ID = order.SupplierID
+			}
+
+		case model.SupplierRole:
+			orders, errTx = s.orderRepo.OrdersBySupplierID(ctx, userID)
+			if errTx != nil {
+				return errTx
+			}
+			for _, order := range orders {
+				order.Supplier, errTx = s.supplierClient.Supplier(ctx, order.SupplierID)
+				if errTx != nil {
+					return errTx
+				}
+			}
+		}
+		for _, order := range orders {
+			orderProducts, errTx := s.orderRepo.OrderProducts(ctx, order.ID)
+			if errTx != nil {
+				return errTx
+			}
+			order.ProductList = orderProducts
+			for _, orderProduct := range orderProducts {
+				product, errTx := s.productClient.Product(ctx, orderProduct.ProductID)
+				if errTx != nil {
+					return errTx
+				}
+				orderProduct.Product = product
+			}
+		}
+
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return orders, nil
+}
+
+type ICreateOrderRepo interface {
+	CreateOrder(ctx context.Context, order *model.Order) (int64, error)
+	CreateOrderProduct(ctx context.Context, orderProduct *model.OrderProduct) error
+}
+
+func (s *OrderService) CreateOrder(ctx context.Context, orders []*model.Order) error {
+
+	// Convert the cart to a list of orders
+	ordersID := make([]int64, len(orders))
+	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		for _, order := range orders {
+			order.OrderDate = time.Now().Add(72 * time.Hour)
+			order.StatusID = 1
+			id, errTx := s.orderRepo.CreateOrder(ctx, order)
+			if errTx != nil {
+				return errTx
+			}
+			for _, op := range order.ProductList {
+				op.OrderID = id
+				errTx = s.orderRepo.CreateOrderProduct(ctx, op)
+				fmt.Println(errTx)
+				if errTx != nil {
+					return errTx
+				}
+			}
+			if errTx != nil {
+				return errTx
+			}
+			ordersID = append(ordersID, id)
+		}
+		return nil
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *OrderService) UpdateOrderStatusBySupplier(ctx context.Context, supplierID int64, orderID int64, newStatusID int) error {
+	return s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		order, err := s.orderRepo.GetOrderByID(ctx, orderID)
+		if err != nil {
+			return err
+		}
+
+		// Check supplier ownership
+		if order.SupplierID != supplierID {
+			return fmt.Errorf("supplier %d does not own order %d", supplierID, orderID)
+		}
+
+		// Validate transition
+		valid := false
+		switch order.StatusID {
+		case model.Pending:
+			if newStatusID == model.InProgress || newStatusID == model.Cancelled {
+				valid = true
+			}
+		case model.InProgress:
+			if newStatusID == model.Completed || newStatusID == model.Cancelled {
+				valid = true
+			}
+		}
+		if !valid {
+			return fmt.Errorf("invalid status transition from %d to %d", order.StatusID, newStatusID)
+		}
+
+		// Update
+		return s.orderRepo.UpdateOrderStatus(ctx, orderID, newStatusID)
+	})
+}
+
+
+modules/order/service/service.go
+--------------------------------------------------------------------------------
+package service
+
+import (
+	"context"
+	"diploma/modules/order/model"
+	"diploma/pkg/client/db"
+)
+
+type OrderService struct {
+	orderRepo      IOrderRepository
+	supplierClient ISupplierClient
+	productClient  IProductClient
+	txManager      db.TxManager
+}
+
+func NewService(repo IOrderRepository, supplierClient ISupplierClient, productClient IProductClient, tx db.TxManager) *OrderService {
+	return &OrderService{
+		supplierClient: supplierClient,
+		productClient:  productClient,
+		orderRepo:      repo,
+		txManager:      tx,
+	}
+
+}
+
+type IOrderRepository interface {
+	ICreateOrderRepo
+	IOrderRepo
+	UpdateOrderStatus(ctx context.Context, orderID int64, newStatus int) error
+	GetOrderByID(ctx context.Context, orderID int64) (*model.Order, error)
+}
+
+type ISupplierClient interface {
+	Supplier(ctx context.Context, id int64) (*model.Supplier, error)
+}
+
+type IProductClient interface {
+	Product(ctx context.Context, id int64) (*model.Product, error)
+}
+
+
+modules/product/handler/converter/catalog.go
+--------------------------------------------------------------------------------
+package converter
+
+import (
+	modelApi "diploma/modules/product/handler/model"
+	"diploma/modules/product/model"
+)
+
+func ToServieProductQueryFromApi(input modelApi.ProductInput) *model.ProductQuery {
+	return &model.ProductQuery{
+		ID: input.ID,
+	}
+}
+
+func ToApiProductResponeFromService(product *model.DetailedProduct) *modelApi.ProductResponse {
+	return &modelApi.ProductResponse{
+		DetailedProduct: ToApiDetailedProductFromSerivce(product),
+	}
+}
+
+func ToApiDetailedProductFromSerivce(dProudct *model.DetailedProduct) *modelApi.DetailedProduct {
+	return &modelApi.DetailedProduct{
+		Product:             ToAPIProductFromService(dProudct.Product),
+		ProductSupplierList: ToApiProductSupplierListFromService(dProudct.ProductSupplierList),
+	}
+}
+
+func ToApiProductSupplierListFromService(productSupplierList []model.ProductSupplier) []modelApi.ProductSupplier {
+	res := make([]modelApi.ProductSupplier, 0, len(productSupplierList))
+
+	for _, ps := range productSupplierList {
+		res = append(res, ToAPIProductSupplierFromService(ps))
+	}
+
+	return res
+}
+
+func ToAPIProductFromService(product *model.Product) *modelApi.Product {
+	return &modelApi.Product{
+		ID:                    product.ID,
+		Name:                  product.Name,
+		ImageUrl:              product.ImageUrl,
+		LowestProductSupplier: ToAPIProductSupplierFromService(product.LowestProductSupplier),
+	}
+}
+
+// ConvertServiceToAPISuppSlierInfo преобразует информацию о поставщике из сервиса в API.
+func ToAPIProductSupplierFromService(ps model.ProductSupplier) modelApi.ProductSupplier {
+	return modelApi.ProductSupplier{
+		Price:      ps.Price,
+		SellAmount: ps.SellAmount,
+		Supplier:   ToAPISupplierFromService(ps.Supplier),
+	}
+}
+
+func ToAPISupplierFromService(supplier model.Supplier) modelApi.Supplier {
+	return modelApi.Supplier{
+		ID:                 supplier.ID,
+		Name:               supplier.Name,
+		OrderAmount:        supplier.OrderAmount,
+		FreeDeliveryAmount: supplier.FreeDeliveryAmount,
+		DeliveryFee:        supplier.DeliveryFee,
+	}
+}
+
+// ConvertAPIToServiceSupplierInfo преобразует информацию о поставщике из API в сервис.
+// func ToServiceSupplierInfoFromAPI(apiSupplierInfo modelApi.ProductSupplierInfo) model.ProductSupplierInfo {
+// 	return model.ProductSupplierInfo{
+// 		SupplierID:                apiSupplierInfo.SupplierID,
+// 		Name:                      apiSupplierInfo.Name,
+// 		MinimumFreeDeliveryAmount: apiSupplierInfo.MinimumFreeDeliveryAmount,
+// 		DeliveryFee:               apiSupplierInfo.DeliveryFee,
+// 	}
+// }
+
+
+modules/product/handler/converter/product-list.go
+--------------------------------------------------------------------------------
+package converter
+
+import (
+	modelApi "diploma/modules/product/handler/model"
+	"diploma/modules/product/model"
+)
+
+func ToServiceProductListQueryFromAPI(input *modelApi.ProductListInput) *model.ProductListQuery {
+	return &model.ProductListQuery{
+		Limit:     input.Limit,
+		Offset: input.Offset,
+	}
+}
+
+func ToProductListResponeFromService(producList *model.ProductList) *modelApi.ProductListResponse {
+	return &modelApi.ProductListResponse{
+		ProductList: ToProductsFromService(producList.Products),
+		Total:       producList.Total,
+	}
+}
+
+func ToProductsFromService(products []model.Product) []modelApi.Product {
+	res := make([]modelApi.Product, 0, len(products))
+	for _, e := range products {
+		res = append(res, *ToAPIProductFromService(&e))
+	}
+
+	return res
+}
+
+
+modules/product/handler/getProduct.go
+--------------------------------------------------------------------------------
+package handler
+
+import (
+	"net/http"
+	"strconv"
+
+	"diploma/modules/product/handler/converter"
+	modelApi "diploma/modules/product/handler/model"
+
+	"github.com/gin-gonic/gin"
+)
+
+// Register godoc
+// @Summary      User registration
+// @Description  Register a new user
+// @Tags         product
+// @Accept       json
+// @Produce      json
+// @Param        product_id     query     int     false "product id"
+// @Success      201  {object}  modelApi.ProductResponse
+// @Failure      400  {object}  modelApi.ErrorResponse
+// @Router       /api/product/:id [get]
+func (h *CatalogHandler) GetProduct(c *gin.Context) {
+
+	productID := c.Param("id")
+
+	// Convert limit and offset from string to int
+	productIdInt, err := strconv.ParseInt(productID, 10, 64)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
+		return
+	}
+
+	input := modelApi.ProductInput{ID: productIdInt}
+	product, err := h.service.Product(c.Request.Context(), converter.ToServieProductQueryFromApi(input))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	if product == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, converter.ToApiProductResponeFromService(product))
+}
+
+
+modules/product/handler/getProductList.go
+--------------------------------------------------------------------------------
+package handler
+
+import (
+	"net/http"
+	"strconv"
+
+	"diploma/modules/product/handler/converter"
+	modelApi "diploma/modules/product/handler/model"
+
+	"github.com/gin-gonic/gin"
+)
+
+// GetProductList godoc
+// @Summary      Get product list
+// @Description  Retrieve a list of products with pagination support using limit and offset
+// @Tags         product
+// @Accept       json
+// @Produce      json
+// @Param        limit     query     int     false "Limit number of products"  // Define limit as a query parameter
+// @Param        offset    query     int     false "Offset for pagination"    // Define offset as a query parameter
+// @Success      200  {object}  modelApi.ProductListResponse
+// @Failure      400  {object}  modelApi.ErrorResponse
+// @Router       /api/product/list [get]
+func (h *CatalogHandler) GetProductList(c *gin.Context) {
+	// Extracting query parameters
+	limit := c.DefaultQuery("limit", "20")  // Default to 10 if not provided
+	offset := c.DefaultQuery("offset", "0") // Default to 0 if not provided
+
+	// Convert limit and offset from string to int
+	limitInt, err := strconv.Atoi(limit)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid limit parameter"})
+		return
+	}
+
+	offsetInt, err := strconv.Atoi(offset)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid offset parameter"})
+		return
+	}
+
+	// Prepare the input for service (query parameters can be passed as part of the input)
+	input := modelApi.ProductListInput{
+		Limit:  limitInt,
+		Offset: offsetInt,
+	}
+
+	// Call the service layer to get the product list
+	productList, err := h.service.ProductList(c.Request.Context(), converter.ToServiceProductListQueryFromAPI(&input))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Convert service response to API response and return it
+	c.JSON(http.StatusOK, converter.ToProductListResponeFromService(productList))
+}
+
+
+modules/product/handler/model/catalog.go
+--------------------------------------------------------------------------------
+package model
+
+type ProductListInput struct {
+	Limit  int `json:"limit"`
+	Offset int `json:"offset"`
+}
+
+type ProductListResponse struct {
+	ProductList []Product `json:"product_list"`
+	Total       int       `json:"total"`
+}
+
+
+modules/product/handler/model/page-count.go
+--------------------------------------------------------------------------------
+package model
+
+type PageCountInput struct {
+	PageSize int `json:"pageSize"`
+}
+
+type PageCountResponse struct {
+	Pages int `json:"pages"`
+}
+
+
+modules/product/handler/model/product.go
+--------------------------------------------------------------------------------
+package model
+
+type ProductInput struct {
+	ID int64 `json:"id"`
+}
+
+type ProductResponse struct {
+	DetailedProduct *DetailedProduct `json:"product"`
+}
+
+type Product struct {
+	ID                    int64           `json:"id"`
+	Name                  string          `json:"name"`
+	ImageUrl              string          `json:"image`
+	LowestProductSupplier ProductSupplier `json:"lowest_product_supplier"`
+}
+
+type ProductSupplier struct {
+	Price      int      `json:"price"`
+	SellAmount int      `json:"sell_amount"`
+	Supplier   Supplier `json:"supplier"`
+}
+
+type Supplier struct {
+	ID                 int64  `json:"id"`
+	Name               string `json:"name"`
+	OrderAmount        int    `json:"order_amount"`
+	FreeDeliveryAmount int    `json:"free_delivery_amount"`
+	DeliveryFee        int    `json:"delivery_fee"`
+}
+
+type DetailedProduct struct {
+	*Product            `json:"product"`
+	ProductSupplierList []ProductSupplier `json:"suppliers"`
+}
+
+type ErrorResponse struct {
+	Err string `json:"error"`
+}
+
+
+modules/product/handler/server.go
+--------------------------------------------------------------------------------
+package handler
+
+import (
+	"context"
+	"diploma/modules/product/model"
+)
+
+type CatalogHandler struct {
+	service IProductService
+}
+
+func NewHandler(service IProductService) *CatalogHandler {
+	return &CatalogHandler{service: service}
+}
+
+type IProductService interface {
+	ProductList(ctx context.Context, query *model.ProductListQuery) (*model.ProductList, error)
+	Product(ctx context.Context, query *model.ProductQuery) (*model.DetailedProduct, error)
+}
+
+
+modules/product/model/errors.go
+--------------------------------------------------------------------------------
+package model
+
+import "errors"
+
+var (
+	ErrInvalidCredentials = errors.New("models: invalid credentials")
+
+	ErrDuplicateNumber = errors.New("models: duplicate email")
+
+	ErrNoRows = errors.New("models: no rows")
+)
+
+
+modules/product/model/page-count.go
+--------------------------------------------------------------------------------
+package model
+
+type PageCountQuery struct {
+	PageSize int
+}
+
+type PageCount struct {
+	Pages int
+}
+
+
+modules/product/model/product.go
+--------------------------------------------------------------------------------
+package model
+
+import "time"
+
+type ProductListQuery struct {
+	Offset int
+	Limit  int
+}
+
+type ProductList struct {
+	Products []Product
+	Total    int
+}
+
+type ProductQuery struct {
+	ID int64
+}
+
+type DetailedProduct struct {
+	*Product
+	ProductSupplierList []ProductSupplier
+}
+
+type Product struct {
+	ID             int64
+	GTIN           int64
+	Name           string
+	ImageUrl       string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	LowestProductSupplier ProductSupplier
+}
+
+type ProductSupplier struct {
+	Price      int
+	SellAmount int
+	Supplier   Supplier
+}
+
+type Supplier struct {
+	ID                 int64
+	Name               string
+	OrderAmount        int
+	FreeDeliveryAmount int
+	DeliveryFee        int
+}
+
+
+modules/product/repository/product/converter/product.go
+--------------------------------------------------------------------------------
+package converter
+
+import (
+	"diploma/modules/product/model"
+	repoModel "diploma/modules/product/repository/product/model"
+)
+
+func toProductFromRepo(p repoModel.Product) model.Product {
+	return model.Product{
+		ID:                    p.ID,
+		Name:                  p.Name,
+		ImageUrl:              p.ImageUrl,
+		GTIN:                  p.GTIN,
+		CreatedAt:             p.CreatedAt,
+		UpdatedAt:             p.UpdatedAt,
+		LowestProductSupplier: ToProductSupplierFromRepo(p.LowestSupplier),
+	}
+}
+
+func ToProductListFromRepo(list []repoModel.Product) []model.Product {
+	result := make([]model.Product, len(list))
+	for i, p := range list {
+		result[i] = toProductFromRepo(p)
+	}
+	return result
+}
+
+// ToProductFromRepo converts a repository-level Product to a domain-level Product.
+func ToProductFromRepo(p repoModel.Product) *model.Product {
+	return &model.Product{
+		ID:                    p.ID,
+		Name:                  p.Name,
+		ImageUrl:              p.ImageUrl,
+		GTIN:                  p.GTIN,
+		CreatedAt:             p.CreatedAt,
+		UpdatedAt:             p.UpdatedAt,
+		LowestProductSupplier: ToProductSupplierFromRepo(p.LowestSupplier),
+	}
+}
+
+func ToProductSupplierFromRepo(sp repoModel.ProductSupplier) model.ProductSupplier {
+	return model.ProductSupplier{
+		Price:      sp.Price,
+		SellAmount: sp.SellAmount,
+		Supplier:   model.Supplier(sp.Supplier),
+	}
+}
+
+func ToSupplierFromRepo(s repoModel.Supplier) model.Supplier {
+	return model.Supplier{
+		ID:                 s.ID,
+		Name:               s.Name,
+		OrderAmount:        s.OrderAmount,
+		FreeDeliveryAmount: s.FreeDeliveryAmount,
+		DeliveryFee:        s.DeliveryFee,
+	}
+}
+
+
+modules/product/repository/product/model/product.go
+--------------------------------------------------------------------------------
+package model
+
+import "time"
+
+type Product struct {
+	ID             int64
+	GTIN           int64
+	Name           string
+	ImageUrl       string
+	CreatedAt      time.Time
+	UpdatedAt      time.Time
+	LowestSupplier ProductSupplier
+}
+
+type ProductSupplier struct {
+	Price      int
+	SellAmount int
+	Supplier   Supplier
+}
+
+type Supplier struct {
+	ID                 int64
+	Name               string
+	OrderAmount        int
+	FreeDeliveryAmount int
+	DeliveryFee        int
+}
+
+type ProductListQuery struct {
+	Offset int
+	Limit  int
+}
+
+
+modules/product/repository/product/reposotiry.go
+--------------------------------------------------------------------------------
+package product
+
+import (
+	"context"
+	"database/sql"
+	"diploma/modules/product/model"
+	"diploma/modules/product/repository/product/converter"
+	repoModel "diploma/modules/product/repository/product/model"
+	"diploma/pkg/client/db"
+	"errors"
+
+	sq "github.com/Masterminds/squirrel"
+)
+
+const (
+	// ======== products table ========
+	productsTbl = "products"
+
+	pIdCol               = "id"
+	pNameCol             = "name"
+	pImageUrlCol         = "image_url"
+	pGTINCol             = "gtin"
+	pLowestSupplierIDCol = "lowest_supplier_id"
+	pCreatedAtCol        = "created_at"
+	pUpdatedAtCol        = "updated_at"
+
+	// ======== product-supplier table ========
+	productsSupplierTbl = "products_supplier"
+	psProductIDCol      = "product_id"
+	psSupplierIDCol     = "supplier_id"
+	psPriceCol          = "price"
+	psSellAmountCol     = "sell_amount"
+
+	// ======== supplier table ========
+	supplierTbl             = "suppliers"
+	sIDCol                  = "user_id"
+	sNameCol                = "name"
+	sOrderAmountCol         = "order_amount"
+	sDeliveryConditionIDCol = "condition_id"
+
+	// ======== delivery conditions ========
+	deliveryConditionTbl    = "delivery_conditions"
+	dcIDCol                 = "condition_id"
+	dcFreeDeliveryAmountCol = "minimum_free_delivery_amount"
+	dcDeliveryFeeCol        = "delivery_fee"
+)
+
+type repo struct {
+	db db.Client
+}
+
+func NewRepository(db db.Client) *repo {
+	return &repo{db: db}
+}
+
+func (r *repo) GetProduct(ctx context.Context, id int64) (*model.Product, error) {
+	builder := sq.
+		Select(
+			pIdCol,
+			pNameCol,
+			pImageUrlCol,
+			pGTINCol,
+			pCreatedAtCol,
+			pUpdatedAtCol,
+		).
+		From(productsTbl).
+		Where(sq.Eq{pIdCol: id}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetProduct",
+		QueryRaw: query,
+	}
+
+	var product repoModel.Product
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(
+		&product.ID,
+		&product.Name,
+		&product.ImageUrl,
+		&product.GTIN,
+		&product.CreatedAt,
+		&product.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return converter.ToProductFromRepo(product), nil
+}
+
+// GetSupplierProductListByProduct retrieves a list of suppliers for a specific product.
+// GetProductListByIDList retrieves a list of products by their IDs.
+func (r *repo) GetProductListByIDList(ctx context.Context, idList []int64) ([]*model.Product, error) {
+	// Build the SQL query to select multiple products based on the list of IDs.
+	builder := sq.
+		Select(
+			pIdCol,
+			pNameCol,
+			pImageUrlCol,
+			pGTINCol,
+			pCreatedAtCol,
+			pUpdatedAtCol,
+		).
+		From(productsTbl).
+		Where(sq.Eq{pIdCol: idList}). // Use the IN clause to match any ID from the idList
+		PlaceholderFormat(sq.Dollar)
+
+	// Convert the query builder to SQL and arguments.
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	// Prepare the query object for logging and execution.
+	q := db.Query{
+		Name:     "product_repository.GetProductListByIDList",
+		QueryRaw: query,
+	}
+
+	// Execute the query and fetch the rows.
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// Create a slice to hold the results.
+	var products []repoModel.Product
+
+	// Iterate over the result rows and scan the values into the products slice.
+	for rows.Next() {
+		var product repoModel.Product
+		err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.ImageUrl,
+			&product.GTIN,
+			&product.CreatedAt,
+			&product.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		products = append(products, product)
+	}
+
+	// Check if there were any errors during the row iteration.
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	// Convert the repo models to the business models and return.
+	var result []*model.Product
+	for _, product := range products {
+		result = append(result, converter.ToProductFromRepo(product))
+	}
+
+	return result, nil
+}
+
+func (r *repo) GetSupplierProductListByProduct(ctx context.Context, id int64) ([]model.ProductSupplier, error) {
+	// Build the query to fetch suppliers for a specific product
+	builder := sq.
+		Select(
+			"ps."+psSupplierIDCol+" AS supplier_id",
+			"ps."+psPriceCol+" AS price",
+			"ps."+psSellAmountCol+" AS sell_amount",
+
+			"s."+sNameCol+" AS supplier_name",
+			"s."+sOrderAmountCol+" AS order_amount",
+
+			"dc."+dcFreeDeliveryAmountCol+" AS minimum_free_delivery_amount",
+			"dc."+dcDeliveryFeeCol+" AS delivery_fee",
+		).
+		From(productsSupplierTbl + " AS ps").
+		// Inner join to get only valid suppliers
+		Join(supplierTbl + " AS s ON s." + sIDCol + " = ps." + psSupplierIDCol).
+		// Optional: Left join delivery conditions
+		LeftJoin(deliveryConditionTbl + " AS dc ON dc." + dcIDCol + " = s." + sDeliveryConditionIDCol).
+		Where(sq.Eq{psProductIDCol: id}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetSupplierProductListByProduct",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []model.ProductSupplier
+	for rows.Next() {
+		var ps model.ProductSupplier
+		var s model.Supplier
+		if err := rows.Scan(
+			&s.ID,
+			&ps.Price,
+			&ps.SellAmount,
+			&s.Name,
+			&s.OrderAmount,
+			&s.FreeDeliveryAmount,
+			&s.DeliveryFee,
+		); err != nil {
+
+			return nil, err
+		}
+		ps.Supplier = s
+		results = append(results, ps)
+	}
+	if err := rows.Err(); err != nil {
+
+		return nil, err
+	}
+	return results, nil
+}
+
+// -----------------------------------------------------------------------------
+// GetProductList
+// -----------------------------------------------------------------------------
+//
+// Retrieves a list of products with their "lowest supplier" info.
+func (r *repo) GetProductList(ctx context.Context, queryParam *model.ProductListQuery) ([]model.Product, error) {
+
+	builder := sq.Select(
+		// Products (p)
+		"p."+pIdCol+" AS product_id",
+		"p."+pNameCol+" AS product_name",
+		"p."+pImageUrlCol+" AS product_image_url",
+		"p."+pGTINCol+" AS product_gtin",
+		// We'll omit `lowest_supplier` if you don't need to scan/store it:
+		// "p."+pLowestSupplierIDCol+" AS product_lowest_supplier",
+
+		// products_supplier (ps)
+		"ps."+psPriceCol+" AS ps_price",
+		"ps."+psSellAmountCol+" AS ps_sell_amount",
+
+		// supplier (s)
+		"s."+sNameCol+" AS supplier_name",
+		"s."+sOrderAmountCol+" AS supplier_order_amount",
+
+		// delivery_conditions (dc)
+		"dc."+dcFreeDeliveryAmountCol+" AS dc_min_free_delivery_amount",
+		"dc."+dcDeliveryFeeCol+" AS dc_delivery_fee",
+	).
+		From(productsTbl + " AS p").
+		// Join products_supplier using the known `lowest_supplier`
+		LeftJoin(productsSupplierTbl + " AS ps ON ps." + psProductIDCol + " = p." + pIdCol +
+			" AND ps." + psSupplierIDCol + " = p." + pLowestSupplierIDCol).
+		// Join supplier on ps.supplier_id
+		LeftJoin(supplierTbl + " AS s ON s." + sIDCol + " = ps." + psSupplierIDCol).
+		// Join delivery_conditions on s.condition_id
+		LeftJoin(deliveryConditionTbl + " AS dc ON dc." + dcIDCol + " = s." + sDeliveryConditionIDCol).
+		PlaceholderFormat(sq.Dollar)
+
+	// Optional limit & offset
+	if queryParam.Limit > 0 {
+		builder = builder.Limit(uint64(queryParam.Limit))
+	} else {
+		builder = builder.Limit(30)
+	}
+	if queryParam.Offset > 0 {
+		builder = builder.Offset(uint64(queryParam.Offset))
+	}
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetProductList",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	// We'll scan into these repoModel structs:
+	var productList []repoModel.Product
+
+	for rows.Next() {
+		var (
+			p  repoModel.Product
+			ps repoModel.ProductSupplier
+			s  repoModel.Supplier
+		)
+
+		// The order and count of Scan fields must match SELECT columns exactly.
+		err := rows.Scan(
+			&p.ID,       // product_id
+			&p.Name,     // product_name
+			&p.ImageUrl, // product_image_url
+			&p.GTIN,     // product_gtin
+
+			&ps.Price,      // ps_price
+			&ps.SellAmount, // ps_sell_amount
+
+			&s.Name,        // supplier_name
+			&s.OrderAmount, // supplier_order_amount
+
+			&s.FreeDeliveryAmount, // dc_min_free_delivery_amount
+			&s.DeliveryFee,        // dc_delivery_fee
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		ps.Supplier = s
+		p.LowestSupplier = ps
+
+		productList = append(productList, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return converter.ToProductListFromRepo(productList), nil
+}
+
+func (r *repo) GetTotalProducts(ctx context.Context) (int, error) {
+	builder := sq.
+		Select("COUNT(*)").
+		From(productsTbl).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return 0, err
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetTotalProducts",
+		QueryRaw: query,
+	}
+
+	var total int
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&total)
+	if err != nil {
+		return 0, err
+	}
+
+	return total, nil
+}
+
+func (r *repo) GetProductPriceBySupplier(ctx context.Context, productID, supplierID int64) (int, error) {
+	builder := sq.
+		Select(psPriceCol).
+		From(productsSupplierTbl).
+		Where(sq.And{
+			sq.Eq{psProductIDCol: productID},
+			sq.Eq{psSupplierIDCol: supplierID},
+		}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return 0, err
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetProductPriceBySupplier",
+		QueryRaw: query,
+	}
+
+	var price int
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&price)
+	// fmt.Println(err)
+	if err != nil {
+		if errors.As(sql.ErrNoRows, &err) {
+			return 0, model.ErrNoRows
+		}
+		return 0, err
+	}
+	return price, nil
+}
+
+
+modules/product/routes.go
+--------------------------------------------------------------------------------
+package product
+
+import (
+	"diploma/modules/product/handler"
+
+	"github.com/gin-gonic/gin"
+)
+
+func RegisterRoutes(router *gin.RouterGroup, h *handler.CatalogHandler) {
+	catalogRoutes := router.Group("product")
+	{
+		catalogRoutes.GET("/list", h.GetProductList)
+
+		catalogRoutes.GET("/:id", h.GetProduct)
+
+		// catalogRoutes.GET("/product/pages", h.GetPageCount)
+
+		// catalogRoutes.POST("/product", h.AddProduct)
+	}
+
+}
+
+
+modules/product/service/product-list.go
+--------------------------------------------------------------------------------
+package service
+
+import (
+	"context"
+	"diploma/modules/product/model"
+)
+
+func (s *ProductService) ProductList(ctx context.Context, query *model.ProductListQuery) (*model.ProductList, error) {
+	productList, err := s.productRepository.GetProductList(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	total, err := s.productRepository.GetTotalProducts(ctx)
+
+	if err != nil {
+		return nil, err
+	}
+	return &model.ProductList{
+		Products: productList,
+		Total:    total,
+	}, err
+}
+
+func (s *ProductService) ProductListByIDList(ctx context.Context, idList []int64) ([]*model.Product, error) {
+	productList, err := s.productRepository.GetProductListByIDList(ctx, idList)
+	if err != nil {
+		return nil, err
+	}
+	return productList, nil
+}
+
+
+modules/product/service/product.go
+--------------------------------------------------------------------------------
+package service
+
+import (
+	"context"
+	"diploma/modules/product/model"
+)
+
+func (s *ProductService) Product(ctx context.Context, query *model.ProductQuery) (*model.DetailedProduct, error) {
+
+	product, err := s.productRepository.GetProduct(ctx, query.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	productSupplierList, err := s.productRepository.GetSupplierProductListByProduct(ctx, query.ID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.DetailedProduct{
+		Product:             product,
+		ProductSupplierList: productSupplierList,
+	}, err
+
+}
+
+func (s *ProductService) ProductPriceBySupplier(ctx context.Context, productID, supplierID int64) (int, error) {
+	return s.productRepository.GetProductPriceBySupplier(ctx, productID, supplierID)
+}
+
+func (s *ProductService) ProductInfo(ctx context.Context, id int64) (*model.Product, error) {
+	return s.productRepository.GetProduct(ctx, id)
+}
+
+
+modules/product/service/service.go
+--------------------------------------------------------------------------------
+package service
+
+import (
+	"context"
+	"diploma/modules/product/model"
+	"diploma/pkg/client/db"
+)
+
+type ProductService struct {
+	productRepository IProductRepository
+	txManager         db.TxManager
+}
+
+func NewService(
+	productRepository IProductRepository,
+	txManager db.TxManager,
+) *ProductService {
+	return &ProductService{
+		productRepository: productRepository,
+		txManager:         txManager,
+	}
+}
+
+type IProductRepository interface {
+	GetProduct(ctx context.Context, id int64) (*model.Product, error)
+	GetSupplierProductListByProduct(ctx context.Context, id int64) ([]model.ProductSupplier, error)
+	GetProductListByIDList(ctx context.Context, idList []int64) ([]*model.Product, error)
+	GetProductList(ctx context.Context, query *model.ProductListQuery) ([]model.Product, error)
+	GetTotalProducts(ctx context.Context) (int, error)
+	GetProductPriceBySupplier(ctx context.Context, productID, supplierID int64) (int, error)
+}
+
+
+modules/supplier/handler/handler.go
+--------------------------------------------------------------------------------
+package handler
+
+type SupplierHandler struct {
+	service ISupplierService
+}
+
+func NewHandler(service ISupplierService) *SupplierHandler {
+	return &SupplierHandler{service: service}
+}
+
+type ISupplierService interface {
+}
+
+
+modules/supplier/model/supplier.go
+--------------------------------------------------------------------------------
+package model
+
+type Supplier struct {
+	OrderAmount        int
+	TotalAmount        int
+	FreeDeliveryAmount int
+	DeliveryFee        int
+	ID                 int64
+	Name               string
+}
+
+
+modules/supplier/repo/converter/supplier.go
+--------------------------------------------------------------------------------
+package converter
+
+import (
+	"diploma/modules/supplier/model"
+	repoModel "diploma/modules/supplier/repo/model"
+)
+
+func ToServiceSupplierFromRepo(supplier repoModel.Supplier) model.Supplier {
+	return model.Supplier{
+		ID:                 supplier.ID,
+		Name:               supplier.Name,
+		TotalAmount:        supplier.TotalAmount,
+		OrderAmount:        supplier.OrderAmount,
+		FreeDeliveryAmount: supplier.FreeDeliveryAmount,
+		DeliveryFee:        supplier.DeliveryFee,
+	}
+}
+
+func ToServiceSupplierListFromRepo(supplier []repoModel.Supplier) []model.Supplier {
+	var suppliersModel []model.Supplier
+	for _, s := range supplier {
+		suppliersModel = append(suppliersModel, ToServiceSupplierFromRepo(s))
+	}
+	return suppliersModel
+
+}
+
+
+modules/supplier/repo/model/supplier.go
+--------------------------------------------------------------------------------
+package model
+
+type Supplier struct {
+	OrderAmount        int
+	TotalAmount        int
+	FreeDeliveryAmount int
+	DeliveryFee        int
+	ID                 int64
+	Name               string
+}
+
+
+modules/supplier/repo/repo.go
+--------------------------------------------------------------------------------
+package repository
+
+import "diploma/pkg/client/db"
+
+type supplierRepo struct {
+	db db.Client
+}
+
+const (
+	// ======== supplier table ========
+	supplierTbl             = "suppliers"
+	sIDCol                  = "user_id"
+	sNameCol                = "name"
+	sOrderAmountCol         = "order_amount"
+	sDeliveryConditionIDCol = "condition_id"
+
+	// ======== delivery conditions ========
+	deliveryConditionTbl    = "delivery_conditions"
+	dcIDCol                 = "condition_id"
+	dcFreeDeliveryAmountCol = "minimum_free_delivery_amount"
+	dcDeliveryFeeCol        = "delivery_fee"
+)
+
+func NewRepository(db db.Client) *supplierRepo {
+	return &supplierRepo{db: db}
+}
+
+
+modules/supplier/repo/supplier.go
+--------------------------------------------------------------------------------
+package repository
+
+import (
+	"context"
+	"diploma/modules/supplier/model"
+	"diploma/modules/supplier/repo/converter"
+	repoModel "diploma/modules/supplier/repo/model"
+	"diploma/pkg/client/db"
+
+	sq "github.com/Masterminds/squirrel"
+)
+
+func (r *supplierRepo) SupplierListByIDList(ctx context.Context, id []int64) ([]model.Supplier, error) {
+
+	builder := sq.
+		Select(
+			"s."+sNameCol+" AS supplier_name",
+			"s."+sOrderAmountCol+" AS order_amount",
+
+			"dc."+dcFreeDeliveryAmountCol+" AS minimum_free_delivery_amount",
+			"dc."+dcDeliveryFeeCol+" AS delivery_fee",
+		).
+		From(supplierTbl + " AS s").
+		LeftJoin(deliveryConditionTbl + " AS dc ON dc." + dcIDCol + " = s." + sDeliveryConditionIDCol).
+		Where(sq.Eq{sIDCol: id}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetSupplierProductListByProduct",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []repoModel.Supplier
+	for rows.Next() {
+		var s repoModel.Supplier
+		if err := rows.Scan(
+			&s.Name,
+			&s.OrderAmount,
+			&s.FreeDeliveryAmount,
+			&s.DeliveryFee,
+		); err != nil {
+			return nil, err
+		}
+		results = append(results, s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return converter.ToServiceSupplierListFromRepo(results), nil
+
+}
+
+
+modules/supplier/routes.go
+--------------------------------------------------------------------------------
+package supplier
+
+// func RegisterRoutes(router *gin.RouterGroup, h *handler.AuthHandler) {
+// 	authRoutes := router.Group("/auth")
+// 	{
+// 		authRoutes.POST("/register", h.Register)
+// 		authRoutes.POST("/login", h.Login)
+// 	}
+// }
+
+
+modules/supplier/service/service.go
+--------------------------------------------------------------------------------
+package service
+
+import (
+	"context"
+	"diploma/modules/supplier/model"
+	"diploma/pkg/client/db"
+)
+
+type SupplierService struct {
+	supplierRepo ISupplierRepository
+	txManager    db.TxManager
+}
+
+func NewService(repo ISupplierRepository, tx db.TxManager) *SupplierService {
+	return &SupplierService{
+			supplierRepo: repo,
+		txManager:    tx,
+	}
+
+}
+
+type ISupplierRepository interface {
+	SupplierListByIDList(ctx context.Context, id []int64) ([]model.Supplier, error)
+}
+
+
+modules/supplier/service/supplier.go
+--------------------------------------------------------------------------------
+package service
+
+import (
+	"context"
+	"diploma/modules/supplier/model"
+)
+
+func (s *SupplierService) SupplierListByIDList(ctx context.Context, id []int64) ([]model.Supplier, error) {
+	return s.supplierRepo.SupplierListByIDList(ctx, id)
+}
+
+func (s *SupplierService) SupplierByID(ctx context.Context, id int64) (*model.Supplier, error) {
+	supplier, err := s.supplierRepo.SupplierListByIDList(ctx, []int64{id})
+	if err != nil {
+		return nil, err
+	}
+	return &supplier[0], nil
+}
+
+
+pkg/client/db/db.go
+--------------------------------------------------------------------------------
+package db
+
+import (
+	"context"
+
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
+)
+
+// Handler - функция, которая выполняется в транзакции
+type Handler func(ctx context.Context) error
+
+// Client клиент для работы с БД
+type Client interface {
+	DB() DB
+	Close() error
+}
+
+// TxManager менеджер транзакций, который выполняет указанный пользователем обработчик в транзакции
+type TxManager interface {
+	ReadCommitted(ctx context.Context, f Handler) error
+}
+
+// Query обертка над запросом, хранящая имя запроса и сам запрос
+// Имя запроса используется для логирования и потенциально может использоваться еще где-то, например, для трейсинга
+type Query struct {
+	Name     string
+	QueryRaw string
+}
+
+// Transactor интерфейс для работы с транзакциями
+type Transactor interface {
+	BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error)
+}
+
+// SQLExecer комбинирует NamedExecer и QueryExecer
+type SQLExecer interface {
+	NamedExecer
+	QueryExecer
+}
+
+// NamedExecer интерфейс для работы с именованными запросами с помощью тегов в структурах
+type NamedExecer interface {
+	ScanOneContext(ctx context.Context, dest interface{}, q Query, args ...interface{}) error
+	ScanAllContext(ctx context.Context, dest interface{}, q Query, args ...interface{}) error
+}
+
+// QueryExecer интерфейс для работы с обычными запросами
+type QueryExecer interface {
+	ExecContext(ctx context.Context, q Query, args ...interface{}) (pgconn.CommandTag, error)
+	QueryContext(ctx context.Context, q Query, args ...interface{}) (pgx.Rows, error)
+	QueryRowContext(ctx context.Context, q Query, args ...interface{}) pgx.Row
+}
+
+// Pinger интерфейс для проверки соединения с БД
+type Pinger interface {
+	Ping(ctx context.Context) error
+}
+
+// DB интерфейс для работы с БД
+type DB interface {
+	SQLExecer
+	Transactor
+	Pinger
+	Close()
+}
+
+
+pkg/client/db/pg/client.go
+--------------------------------------------------------------------------------
+package pg
+
+import (
+	"diploma/pkg/client/db"
+	"context"
+
+	"github.com/jackc/pgx/v4/pgxpool"
+	"github.com/pkg/errors"
+)
+
+type pgClient struct {
+	masterDBC db.DB
+}
+
+func New(ctx context.Context, dsn string) (db.Client, error) {
+	dbc, err := pgxpool.Connect(ctx, dsn)
+	if err != nil {
+		return nil, errors.Errorf("failed to connect to db: %v", err)
+	}
+
+	return &pgClient{
+		masterDBC: &pg{dbc: dbc},
+	}, nil
+}
+
+func (c *pgClient) DB() db.DB {
+	return c.masterDBC
+}
+
+func (c *pgClient) Close() error {
+	if c.masterDBC != nil {
+		c.masterDBC.Close()
+	}
+
+	return nil
+}
+
+
+pkg/client/db/pg/pg.go
+--------------------------------------------------------------------------------
+package pg
+
+import (
+	"context"
+	"diploma/pkg/client/db"
+	"diploma/pkg/client/db/prettier"
+	"fmt"
+	"log"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
+)
+
+type key string
+
+const (
+	TxKey key = "tx"
+)
+
+type pg struct {
+	dbc *pgxpool.Pool
+}
+
+func NewDB(dbc *pgxpool.Pool) db.DB {
+	return &pg{
+		dbc: dbc,
+	}
+}
+
+func (p *pg) ScanOneContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
+	logQuery(ctx, q, args...)
+
+	row, err := p.QueryContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+
+	return pgxscan.ScanOne(dest, row)
+}
+
+func (p *pg) ScanAllContext(ctx context.Context, dest interface{}, q db.Query, args ...interface{}) error {
+	logQuery(ctx, q, args...)
+
+	rows, err := p.QueryContext(ctx, q, args...)
+	if err != nil {
+		return err
+	}
+
+	return pgxscan.ScanAll(dest, rows)
+}
+
+func (p *pg) ExecContext(ctx context.Context, q db.Query, args ...interface{}) (pgconn.CommandTag, error) {
+	logQuery(ctx, q, args...)
+
+	tx, ok := ctx.Value(TxKey).(pgx.Tx)
+	if ok {
+		return tx.Exec(ctx, q.QueryRaw, args...)
+	}
+
+	return p.dbc.Exec(ctx, q.QueryRaw, args...)
+}
+
+func (p *pg) QueryContext(ctx context.Context, q db.Query, args ...interface{}) (pgx.Rows, error) {
+	logQuery(ctx, q, args...)
+
+	tx, ok := ctx.Value(TxKey).(pgx.Tx)
+	if ok {
+		return tx.Query(ctx, q.QueryRaw, args...)
+	}
+
+	return p.dbc.Query(ctx, q.QueryRaw, args...)
+}
+
+func (p *pg) QueryRowContext(ctx context.Context, q db.Query, args ...interface{}) pgx.Row {
+	logQuery(ctx, q, args...)
+
+	tx, ok := ctx.Value(TxKey).(pgx.Tx)
+	if ok {
+		return tx.QueryRow(ctx, q.QueryRaw, args...)
+	}
+
+	return p.dbc.QueryRow(ctx, q.QueryRaw, args...)
+}
+
+func (p *pg) BeginTx(ctx context.Context, txOptions pgx.TxOptions) (pgx.Tx, error) {
+	return p.dbc.BeginTx(ctx, txOptions)
+}
+
+func (p *pg) Ping(ctx context.Context) error {
+	return p.dbc.Ping(ctx)
+}
+
+func (p *pg) Close() {
+	p.dbc.Close()
+}
+
+func MakeContextTx(ctx context.Context, tx pgx.Tx) context.Context {
+	return context.WithValue(ctx, TxKey, tx)
+}
+
+func logQuery(ctx context.Context, q db.Query, args ...interface{}) {
+	prettyQuery := prettier.Pretty(q.QueryRaw, prettier.PlaceholderDollar, args...)
+	log.Println(
+		ctx,
+		fmt.Sprintf("sql: %s", q.Name),
+		fmt.Sprintf("query: %s", prettyQuery),
+	)
+}
+
+
+pkg/client/db/prettier/query_prettier.go
+--------------------------------------------------------------------------------
+package prettier
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
+const (
+	PlaceholderDollar   = "$"
+	PlaceholderQuestion = "?"
+)
+
+func Pretty(query string, placeholder string, args ...any) string {
+	for i, param := range args {
+		var value string
+		switch v := param.(type) {
+		case string:
+			value = fmt.Sprintf("%q", v)
+		case []byte:
+			value = fmt.Sprintf("%q", string(v))
+		default:
+			value = fmt.Sprintf("%v", v)
+		}
+
+		query = strings.Replace(query, fmt.Sprintf("%s%s", placeholder, strconv.Itoa(i+1)), value, -1)
+	}
+
+	query = strings.ReplaceAll(query, "\t", "")
+	query = strings.ReplaceAll(query, "\n", " ")
+
+	return strings.TrimSpace(query)
+}
+
+
+pkg/client/db/transaction/transaction.go
+--------------------------------------------------------------------------------
+package transaction
+
+import (
+	"context"
+	"diploma/pkg/client/db"
+	"diploma/pkg/client/db/pg"
+
+	"github.com/jackc/pgx/v4"
+	"github.com/pkg/errors"
+)
+
+type manager struct {
+	db db.Transactor
+}
+
+// NewTransactionManager создает новый менеджер транзакций, который удовлетворяет интерфейсу db.TxManager
+func NewTransactionManager(db db.Transactor) db.TxManager {
+	return &manager{
+		db: db,
+	}
+}
+
+// transaction основная функция, которая выполняет указанный пользователем обработчик в транзакции
+func (m *manager) transaction(ctx context.Context, opts pgx.TxOptions, fn db.Handler) (err error) {
+	// Если это вложенная транзакция, пропускаем инициацию новой транзакции и выполняем обработчик.
+	tx, ok := ctx.Value(pg.TxKey).(pgx.Tx)
+	if ok {
+		return fn(ctx)
+	}
+
+	// Стартуем новую транзакцию.
+	tx, err = m.db.BeginTx(ctx, opts)
+	if err != nil {
+		return errors.Wrap(err, "can't begin transaction")
+	}
+
+	// Кладем транзакцию в контекст.
+	ctx = pg.MakeContextTx(ctx, tx)
+
+	// Настраиваем функцию отсрочки для отката или коммита транзакции.
+	defer func() {
+		// восстанавливаемся после паники
+		if r := recover(); r != nil {
+			err = errors.Errorf("panic recovered: %v", r)
+		}
+
+		// откатываем транзакцию, если произошла ошибка
+		if err != nil {
+			if errRollback := tx.Rollback(ctx); errRollback != nil {
+				err = errors.Wrapf(err, "errRollback: %v", errRollback)
+			}
+
+			return
+		}
+
+		// если ошибок не было, коммитим транзакцию
+		if nil == err {
+			err = tx.Commit(ctx)
+			if err != nil {
+				err = errors.Wrap(err, "tx commit failed")
+			}
+		}
+	}()
+
+	// Выполните код внутри транзакции.
+	// Если функция терпит неудачу, возвращаем ошибку, и функция отсрочки выполняет откат
+	// или в противном случае транзакция коммитится.
+	if err = fn(ctx); err != nil {
+		err = errors.Wrap(err, "failed executing code inside transaction")
+	}
+
+	return err
+}
+
+func (m *manager) ReadCommitted(ctx context.Context, f db.Handler) error {
+	txOpts := pgx.TxOptions{IsoLevel: pgx.ReadCommitted}
+	return m.transaction(ctx, txOpts, f)
+}
+
+
+pkg/closer/closer.go
+--------------------------------------------------------------------------------
+package closer
+
+import (
+	"log"
+	"os"
+	"os/signal"
+	"sync"
+)
+
+var globalCloser = New()
+
+// Add adds `func() error` callback to the globalCloser
+func Add(f ...func() error) {
+	globalCloser.Add(f...)
+}
+
+// Wait ...
+func Wait() {
+	globalCloser.Wait()
+}
+
+// CloseAll ...
+func CloseAll() {
+	globalCloser.CloseAll()
+}
+
+// Closer ...
+type Closer struct {
+	mu    sync.Mutex
+	once  sync.Once
+	done  chan struct{}
+	funcs []func() error
+}
+
+// New returns new Closer, if []os.Signal is specified Closer will automatically call CloseAll when one of signals is received from OS
+func New(sig ...os.Signal) *Closer {
+	c := &Closer{done: make(chan struct{})}
+	if len(sig) > 0 {
+		go func() {
+			ch := make(chan os.Signal, 1)
+			signal.Notify(ch, sig...)
+			<-ch
+			signal.Stop(ch)
+			c.CloseAll()
+		}()
+	}
+	return c
+}
+
+// Add func to closer
+func (c *Closer) Add(f ...func() error) {
+	c.mu.Lock()
+	c.funcs = append(c.funcs, f...)
+	c.mu.Unlock()
+}
+
+// Wait blocks until all closer functions are done
+func (c *Closer) Wait() {
+	<-c.done
+}
+
+// CloseAll calls all closer functions
+func (c *Closer) CloseAll() {
+	c.once.Do(func() {
+		defer close(c.done)
+
+		c.mu.Lock()
+		funcs := c.funcs
+		c.funcs = nil
+		c.mu.Unlock()
+
+		// call all Closer funcs async
+		errs := make(chan error, len(funcs))
+		for _, f := range funcs {
+			go func(f func() error) {
+				errs <- f()
+			}(f)
+		}
+
+		for i := 0; i < cap(errs); i++ {
+			if err := <-errs; err != nil {
+				log.Println("error returned from Closer")
+			}
+		}
+	})
+}
+
+
+pkg/context-keys/key.go
+--------------------------------------------------------------------------------
+package contextkeys
+
+type ContextKey string
+
+const (
+	UserKey ContextKey = "user"
+)
+
+
+pkg/password-util/password-util.go
+--------------------------------------------------------------------------------
+package passwordutil
+
+import (
+	"golang.org/x/crypto/bcrypt"
+)
+
+const (
+	cost = bcrypt.DefaultCost
+)
+
+func HashPassword(password string) (string, error) {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), cost)
+	if err != nil {
+		return "", err
+	}
+	return string(bytes), nil
+}
+
+func CheckPasswordHash(password, hash string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+	return err == nil
+}
+
+
+pkg/validator/validator.go
+--------------------------------------------------------------------------------
+package validator
+
+import (
+	"fmt"
+	"regexp"
+	"strings"
+	"unicode/utf8"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+)
+
+type Validator struct {
+	FieldErrors map[string]string
+}
+
+func (v *Validator) Valid() bool {
+	return len(v.FieldErrors) == 0
+}
+
+func (v *Validator) AddFieldError(key, message string) {
+	if v.FieldErrors == nil {
+		v.FieldErrors = make(map[string]string)
+	}
+	if _, exists := v.FieldErrors[key]; !exists {
+		v.FieldErrors[key] = message
+	}
+}
+
+func (v *Validator) CheckField(ok bool, key, message string) {
+	if !ok {
+		v.AddFieldError(key, message)
+	}
+}
+
+func NotBlank(value string) bool {
+	return strings.TrimSpace(value) != ""
+}
+
+func NotSelected(arr []string) bool {
+	return len(arr) != 0
+}
+
+func MinChars(value string, n int) bool {
+	return utf8.RuneCountInString(value) >= n
+}
+
+func MaxChars(value string, n int) bool {
+	return utf8.RuneCountInString(value) <= n
+}
+
+func IsEmail(value string) bool {
+	emailRegex := regexp.MustCompile("^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$")
+	return emailRegex.MatchString(value)
+}
+
+func IsError(err error) bool {
+	return err == nil
+}
+
+func (v *Validator) Errors() error {
+	if len(v.FieldErrors) == 0 {
+		return nil
+	}
+
+	var errorMessages []string
+	for field, err := range v.FieldErrors {
+		errorMessages = append(errorMessages, fmt.Sprintf("%s: %s", field, err))
+	}
+
+	errorString := strings.Join(errorMessages, "; ")
+	return status.Errorf(codes.InvalidArgument, "Validation failed: %s", errorString)
+}
+
+
+txt.go
+--------------------------------------------------------------------------------
+package main
+
+import (
+	"bufio"
+	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+)
+
+type FileEntry struct {
+	Path     string
+	Contents string
+}
+
+func main() {
+	root := "."
+	outputFile := "project_summary.txt"
+	var entries []FileEntry
+	var structure strings.Builder
+
+	// Сканируем .go файлы
+	err := filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		if d.IsDir() && (d.Name() == ".git" || d.Name() == "vendor") {
+			return filepath.SkipDir
+		}
+		if !d.IsDir() && strings.HasSuffix(d.Name(), ".go") {
+			relPath, _ := filepath.Rel(root, path)
+			dir := filepath.Dir(relPath)
+			entries = append(entries, FileEntry{
+				Path:     relPath,
+				Contents: readFile(path),
+			})
+			addToStructure(&structure, dir, filepath.Base(path))
+		}
+		return nil
+	})
+
+	if err != nil {
+		panic(err)
+	}
+
+	sort.Slice(entries, func(i, j int) bool {
+		return entries[i].Path < entries[j].Path
+	})
+
+	// Пишем основной файл
+	file, err := os.Create(outputFile)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	writer := bufio.NewWriter(file)
+	writer.WriteString("📂 PROJECT STRUCTURE (.go only):\n\n")
+	writer.WriteString(structure.String())
+	writer.WriteString("\n\n📄 GO FILES CONTENT:\n\n")
+
+	for _, entry := range entries {
+		writer.WriteString(fmt.Sprintf("%s\n", entry.Path))
+		writer.WriteString(strings.Repeat("-", 80) + "\n")
+		writer.WriteString(entry.Contents + "\n\n")
+	}
+	writer.Flush()
+
+	fmt.Println("✅ Project summary written to", outputFile)
+
+	// Разделение на две части
+	splitFileIntoTwo(outputFile, "project_summary_part1.txt", "project_summary_part2.txt")
+}
+
+func readFile(path string) string {
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return fmt.Sprintf("// ERROR reading %s: %v", path, err)
+	}
+	return string(content)
+}
+
+func addToStructure(sb *strings.Builder, dir, file string) {
+	levels := strings.Split(dir, string(os.PathSeparator))
+	indent := ""
+	for i, level := range levels {
+		if level == "." {
+			continue
+		}
+		indent = strings.Repeat("│   ", i)
+		sb.WriteString(fmt.Sprintf("%s├── /%s\n", indent, level))
+	}
+	indent = strings.Repeat("│   ", len(levels))
+	sb.WriteString(fmt.Sprintf("%s└── %s\n", indent, file))
+}
+
+func splitFileIntoTwo(input, output1, output2 string) {
+	// Читаем все строки
+	data, err := os.ReadFile(input)
+	if err != nil {
+		panic(err)
+	}
+	lines := strings.Split(string(data), "\n")
+	mid := len(lines) / 2
+
+	// Пишем первую половину
+	err = os.WriteFile(output1, []byte(strings.Join(lines[:mid], "\n")), 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	// Пишем вторую половину
+	err = os.WriteFile(output2, []byte(strings.Join(lines[mid:], "\n")), 0644)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("📝 File split into:", output1, "and", output2)
+}
+
+

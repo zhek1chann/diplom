@@ -26,6 +26,8 @@ func NewService(repo IOrderRepository, supplierClient ISupplierClient, productCl
 type IOrderRepository interface {
 	ICreateOrderRepo
 	IOrderRepo
+	UpdateOrderStatus(ctx context.Context, orderID int64, newStatus int) error
+	GetOrderByID(ctx context.Context, orderID int64) (*model.Order, error)
 }
 
 type ISupplierClient interface {

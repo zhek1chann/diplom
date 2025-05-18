@@ -140,6 +140,59 @@ func (r *OrderRepo) OrdersBySupplierID(ctx context.Context, supplierID int64) ([
 	return orders, nil
 }
 
+func (r *OrderRepo) GetOrderByID(ctx context.Context, orderID int64) (*model.Order, error) {
+	builder := sq.
+		Select(oIDColumn, oCustomerIDColumn, oOrderDateColumn, oSupplierIDColumn, oStatusIDColumn).
+		From(ordersTable).
+		Where(sq.Eq{oIDColumn: orderID}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.GetOrderByID",
+		QueryRaw: query,
+	}
+
+	var order modelRepo.Order
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(
+		&order.ID,
+		&order.CustomerID,
+		&order.OrderDate,
+		&order.SupplierID,
+		&order.StatusID,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return converter.ToServiceOrderFromRepo(&order), nil
+}
+
+func (r *OrderRepo) UpdateOrderStatus(ctx context.Context, orderID int64, newStatus int) error {
+	builder := sq.
+		Update(ordersTable).
+		Set(oStatusIDColumn, newStatus).
+		Where(sq.Eq{oIDColumn: orderID}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return err
+	}
+
+	q := db.Query{
+		Name:     "order_repository.UpdateOrderStatus",
+		QueryRaw: query,
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
+	return err
+}
+
 // UpdateOrder modifies an existing order record.
 // func (r *OrderRepo) UpdateOrder(ctx context.Context, order *model.Order) error {
 // 	builder := sq.

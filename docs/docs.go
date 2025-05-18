@@ -338,6 +338,187 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/order/cancel": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Allows a customer to cancel their own order only if it's in Pending status.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Cancel order by customer",
+                "parameters": [
+                    {
+                        "description": "Order ID to cancel",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.CancelOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "order cancelled",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input or bad request",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/order/status": {
+            "post": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Supplier updates the status of their order",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Update order status by supplier",
+                "parameters": [
+                    {
+                        "description": "Order ID and New Status",
+                        "name": "input",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/model.UpdateOrderStatusRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "status updated",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid input",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/order/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "Retrieves an order by its ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "orders"
+                ],
+                "summary": "Get order by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Order ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Order details",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.Order"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid order ID",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized: invalid or missing JWT token",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error while retrieving order",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_order_handler_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/product/:id": {
             "get": {
                 "description": "Register a new user",
@@ -642,6 +823,17 @@ const docTemplate = `{
                 }
             }
         },
+        "model.CancelOrderRequest": {
+            "type": "object",
+            "required": [
+                "order_id"
+            ],
+            "properties": {
+                "order_id": {
+                    "type": "integer"
+                }
+            }
+        },
         "model.GetCartResponse": {
             "type": "object",
             "properties": {
@@ -743,6 +935,21 @@ const docTemplate = `{
                 "id": {
                     "type": "integer",
                     "example": 1
+                }
+            }
+        },
+        "model.UpdateOrderStatusRequest": {
+            "type": "object",
+            "required": [
+                "new_status_id",
+                "order_id"
+            ],
+            "properties": {
+                "new_status_id": {
+                    "type": "integer"
+                },
+                "order_id": {
+                    "type": "integer"
                 }
             }
         }

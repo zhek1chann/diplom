@@ -32,3 +32,12 @@ type Supplier struct {
 	ID   int64  `json:"id"`
 	Name string `json:"name"`
 }
+
+type UpdateOrderStatusRequest struct {
+	OrderID     int64 `json:"order_id" binding:"required"`
+	NewStatusID int   `json:"new_status_id" binding:"required"`
+}
+
+type CancelOrderRequest struct {
+	OrderID int64 `json:"order_id" binding:"required"`
+}

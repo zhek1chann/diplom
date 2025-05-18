@@ -38,6 +38,12 @@ func (s *OrderService) Orders(ctx context.Context, userID int64, role int) ([]*m
 			if errTx != nil {
 				return errTx
 			}
+			for _, order := range orders {
+				order.Supplier, errTx = s.supplierClient.Supplier(ctx, order.SupplierID)
+				if errTx != nil {
+					return errTx
+				}
+			}
 		}
 		for _, order := range orders {
 			orderProducts, errTx := s.orderRepo.OrderProducts(ctx, order.ID)
@@ -100,4 +106,99 @@ func (s *OrderService) CreateOrder(ctx context.Context, orders []*model.Order) e
 	}
 
 	return nil
+}
+
+func (s *OrderService) UpdateOrderStatusBySupplier(ctx context.Context, supplierID int64, orderID int64, newStatusID int) error {
+	return s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		order, err := s.orderRepo.GetOrderByID(ctx, orderID)
+		if err != nil {
+			return err
+		}
+
+		if order.SupplierID != supplierID {
+			return fmt.Errorf("supplier %d does not own order %d", supplierID, orderID)
+		}
+
+		valid := false
+		switch order.StatusID {
+		case model.Pending:
+			if newStatusID == model.InProgress || newStatusID == model.Cancelled {
+				valid = true
+			}
+		case model.InProgress:
+			if newStatusID == model.Completed || newStatusID == model.Cancelled {
+				valid = true
+			}
+		}
+		if !valid {
+			return fmt.Errorf("invalid status transition from %d to %d", order.StatusID, newStatusID)
+		}
+
+		return s.orderRepo.UpdateOrderStatus(ctx, orderID, newStatusID)
+	})
+}
+
+func (s *OrderService) GetOrderByID(ctx context.Context, userID int64, role int, orderID int64) (*model.Order, error) {
+	var order *model.Order
+	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		var errTx error
+		order, errTx = s.orderRepo.GetOrderByID(ctx, orderID)
+		if errTx != nil {
+			return errTx
+		}
+
+		switch role {
+		case model.CustomerRole:
+			if order.CustomerID != userID {
+				return fmt.Errorf("unauthorized: customer can only view their own orders")
+			}
+		case model.SupplierRole:
+			if order.SupplierID != userID {
+				return fmt.Errorf("unauthorized: supplier can only view their own orders")
+			}
+		case model.AdminRole:
+		default:
+			return fmt.Errorf("unauthorized role")
+		}
+
+		order.Supplier, errTx = s.supplierClient.Supplier(ctx, order.SupplierID)
+		if errTx != nil {
+			return errTx
+		}
+		orderProducts, errTx := s.orderRepo.OrderProducts(ctx, order.ID)
+		if errTx != nil {
+			return errTx
+		}
+		order.ProductList = orderProducts
+		for _, op := range order.ProductList {
+			op.Product, errTx = s.productClient.Product(ctx, op.ProductID)
+			if errTx != nil {
+				return errTx
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return order, nil
+}
+
+func (s *OrderService) CancelOrderByCustomer(ctx context.Context, customerID int64, orderID int64) error {
+	return s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		order, err := s.orderRepo.GetOrderByID(ctx, orderID)
+		if err != nil {
+			return err
+		}
+
+		if order.CustomerID != customerID {
+			return fmt.Errorf("customer %d does not own order %d", customerID, orderID)
+		}
+
+		if order.StatusID != model.Pending {
+			return fmt.Errorf("only orders in Pending status can be cancelled")
+		}
+
+		return s.orderRepo.UpdateOrderStatus(ctx, orderID, model.Cancelled)
+	})
 }
