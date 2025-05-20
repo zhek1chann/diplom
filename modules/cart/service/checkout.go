@@ -50,7 +50,7 @@ func (s *cartServ) Checkout(ctx context.Context, userID int64) (model.CheckoutRe
 func (s *cartServ) CommitCheckout(ctx context.Context, commitCheckout model.CommitCheckout) error {
 	fmt.Println("CommitCheckout", commitCheckout)
 	switch commitCheckout.PaymentStatus {
-	case model.PaymentStatusSuccess:
+	case model.PaymentStatusApproved:
 		paymentOrder, err := s.redis.PaymentOrder(ctx, commitCheckout.OrderID)
 		if err != nil {
 			return err

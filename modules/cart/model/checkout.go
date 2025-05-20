@@ -1,7 +1,7 @@
 package model
 
 const (
-	PaymentStatusSuccess = "success"
+	PaymentStatusApproved = "approved"
 	PaymentStatusFailed  = "failed"
 )
 
