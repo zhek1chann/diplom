@@ -20,6 +20,6 @@ func RegisterRoutes(router *gin.RouterGroup, h *handler.CartHandler) {
 func RegisterRoutesCallback(router *gin.RouterGroup, h *handler.CartHandler) {
 	cardRoutes := router.Group("/callback")
 	{
-		cardRoutes.POST("/", h.CartPaymentCallback)
+		cardRoutes.POST("/checkout", h.CartPaymentCallback)
 	}
 }
