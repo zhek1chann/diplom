@@ -108,15 +108,7 @@ func checkCartForCheckout(cart *model.Cart) bool {
 func getCartAmount(cart *model.Cart) int {
 	totalSum := 0
 	for _, supplier := range cart.Suppliers {
-		totalSupplier := 0
-		for _, product := range supplier.ProductList {
-			totalSupplier += product.Price * product.Quantity
-		}
-		if totalSupplier > supplier.FreeDeliveryAmount {
-			totalSum += totalSupplier
-		} else {
-			totalSum += totalSupplier + supplier.FreeDeliveryAmount
-		}
+		totalSum += supplier.TotalAmount
 	}
 	return totalSum
 }
