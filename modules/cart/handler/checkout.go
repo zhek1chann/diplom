@@ -2,6 +2,7 @@ package handler
 
 import (
 	"diploma/modules/auth/jwt"
+	"diploma/modules/cart/handler/converter"
 	modelApi "diploma/modules/cart/handler/model"
 	"diploma/modules/cart/model"
 	contextkeys "diploma/pkg/context-keys"
@@ -18,7 +19,7 @@ import (
 // @Security ApiKeyAuth
 // @Accept json
 // @Produce json
-// @Success 200 {object} map[string]interface{} "Checkout status"
+// @Success 200 {object} modelApi.CheckoutResponse "Checkout status"
 // @Failure 401 {object} modelApi.ErrorResponse "Unauthorized"
 // @Failure 500 {object} modelApi.ErrorResponse "Internal Server Error"
 // @Router /api/cart/checkout [post]
@@ -30,7 +31,7 @@ func (h *CartHandler) Checkout(c *gin.Context) {
 		return
 	}
 
-	ok, err := h.service.Checkout(c.Request.Context(), claims.UserID)
+	checkout, err := h.service.Checkout(c.Request.Context(), claims.UserID)
 	if err != nil {
 		if errors.Is(err, model.ErrInvalidCart) {
 			c.JSON(http.StatusBadRequest, modelApi.ErrorResponse{Err: err.Error()})
@@ -41,5 +42,22 @@ func (h *CartHandler) Checkout(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"status": ok})
+	c.JSON(http.StatusOK, converter.ToAPICheckoutFromService(checkout))
+}
+
+func (h *CartHandler) CartPaymentCallback(c *gin.Context) {
+
+	var data map[string]interface{}
+	if err := c.ShouldBindJSON(&data); err != nil {
+		c.JSON(http.StatusBadRequest, modelApi.ErrorResponse{Err: "Invalid JSON"})
+		return
+	}
+	commitCheckout, err := converter.ToServiceCheckoutFromApi(data)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, modelApi.ErrorResponse{Err: err.Error()})
+		return
+	}
+
+	h.service.CommitCheckout(c.Request.Context(), commitCheckout)
+	c.JSON(http.StatusOK, gin.H{"message": "JSON received"})
 }

@@ -40,3 +40,5 @@ type DeleteProductQuery struct {
 	Quantity   int
 	SupplierID int64
 }
+
+

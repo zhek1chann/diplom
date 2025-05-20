@@ -4,6 +4,11 @@ definitions:
       error:
         type: string
     type: object
+  diploma_modules_cart_handler_model.CheckoutResponse:
+    properties:
+      checkout_url:
+        type: string
+    type: object
   diploma_modules_cart_handler_model.ErrorResponse:
     properties:
       error:
@@ -346,8 +351,7 @@ paths:
         "200":
           description: Checkout status
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/diploma_modules_cart_handler_model.CheckoutResponse'
         "401":
           description: Unauthorized
           schema:

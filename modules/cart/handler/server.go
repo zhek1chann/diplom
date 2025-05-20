@@ -14,9 +14,10 @@ func NewHandler(service ICartService) *CartHandler {
 }
 
 type ICartService interface {
-	Checkout(ctx context.Context, userID int64) (bool, error)
+	Checkout(ctx context.Context, userID int64) (model.CheckoutResponse, error)
 	Cart(ctx context.Context, userID int64) (*model.Cart, error)
 	AddProductToCard(ctx context.Context, input *model.PutCartQuery) error
 	DeleteProductFromCart(ctx context.Context, input *model.PutCartQuery) error
+	CommitCheckout(ctx context.Context, commitCheckout model.CommitCheckout) error
 	// DeleteProductFromCart(ctx context.Context, input *model.DeleteProductQuery) error
 }
