@@ -106,6 +106,9 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 	productHandler := a.serviceProvider.ProductHandler(ctx)
 	product.RegisterRoutes(apiGroup, productHandler)
 
+	cartCallbackHander := a.serviceProvider.CartHandler(ctx)
+	cart.RegisterRoutesCallback(apiGroup, cartCallbackHander)
+
 	secureGroup := router.Group("/api")
 	secureGroup.Use(authMiddleware.AuthMiddleware())
 

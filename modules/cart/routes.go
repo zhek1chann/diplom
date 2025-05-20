@@ -13,7 +13,13 @@ func RegisterRoutes(router *gin.RouterGroup, h *handler.CartHandler) {
 		cardRoutes.GET("/", h.GetCart)
 		cardRoutes.POST("/checkout", h.Checkout)
 		cardRoutes.DELETE("/delete", h.DeleteProductFromCart)
-		cardRoutes.POST("/checkout/callback", h.CartPaymentCallback)
 	}
 
+}
+
+func RegisterRoutesCallback(router *gin.RouterGroup, h *handler.CartHandler) {
+	cardRoutes := router.Group("/callback")
+	{
+		cardRoutes.POST("/", h.CartPaymentCallback)
+	}
 }
