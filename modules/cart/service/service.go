@@ -11,6 +11,8 @@ type cartServ struct {
 	productService  IProductService
 	supplierService ISupplierClient
 	orderService    IOrderClient
+	PaymentClient   IPaymentClient
+	redis           IRedis
 	txManager       db.TxManager
 }
 
@@ -19,15 +21,23 @@ func NewService(
 	productService IProductService,
 	supplierService ISupplierClient,
 	OrderClient IOrderClient,
+	PaymentClient IPaymentClient,
+	redis IRedis,
 	txManager db.TxManager,
 ) *cartServ {
 	return &cartServ{
 		cartRepo:        cartRepository,
 		supplierService: supplierService,
 		orderService:    OrderClient,
+		PaymentClient:   PaymentClient,
+		redis:           redis,
 		txManager:       txManager,
 		productService:  productService,
 	}
+}
+
+type IPaymentClient interface {
+	PaymentRequest(orderID, amount, currency, description string) (model.CheckoutResponse, error)
 }
 
 type IProductService interface {
@@ -40,6 +50,11 @@ type ISupplierClient interface {
 
 type IOrderClient interface {
 	CreateOrder(ctx context.Context, cart *model.Cart) error
+}
+
+type IRedis interface {
+	SavePaymentOrder(ctx context.Context, paymentOrder model.PaymentOrder) error
+	PaymentOrder(ctx context.Context, orderID string) (model.PaymentOrder, error)
 }
 
 type ICartRepository interface {

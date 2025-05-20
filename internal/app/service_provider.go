@@ -22,8 +22,10 @@ import (
 	productService "diploma/modules/product/service"
 
 	cartOrderClient "diploma/modules/cart/client/order"
+	cartPaymentClient "diploma/modules/cart/client/payment"
 	cartSupplierClient "diploma/modules/cart/client/supplier"
 	cartApi "diploma/modules/cart/handler"
+	cartRedisClient "diploma/modules/cart/redis"
 	cartRepository "diploma/modules/cart/repository"
 	cartService "diploma/modules/cart/service"
 
@@ -37,6 +39,8 @@ import (
 
 	// orderProductClient "diploma/modules/order/client/product"
 	orderService "diploma/modules/order/service"
+
+	"github.com/go-redis/redis/v8"
 )
 
 type serviceProvider struct {
@@ -44,9 +48,12 @@ type serviceProvider struct {
 	jwtConfig     config.JWTConfig
 	httpConfig    config.HTTPConfig
 	swaggerConfig config.SwaggerConfig
+	paymentConfig config.PaymentConfig
+	redisConfig   config.RedisConfig
 
-	dbClient  db.Client
-	txManager db.TxManager
+	dbClient    db.Client
+	txManager   db.TxManager
+	redisClient []*redis.Client
 
 	// auth
 	authRepository authService.IAuthRepository
@@ -66,6 +73,8 @@ type serviceProvider struct {
 	cartOrderClient    cartService.IOrderClient
 	cartRepository     cartService.ICartRepository
 	cartService        cartApi.ICartService
+	cartPaymentClient  cartService.IPaymentClient
+	cartRedisClient    cartService.IRedis
 	cartHanlder        *cartApi.CartHandler
 
 	// supplier
@@ -137,6 +146,32 @@ func (s *serviceProvider) SwaggerConfig() config.SwaggerConfig {
 	return s.swaggerConfig
 }
 
+func (s *serviceProvider) PaymentConfig() config.PaymentConfig {
+	if s.paymentConfig == nil {
+		cfg, err := config.NewPaymentConfig()
+		if err != nil {
+			log.Fatalf("failed to get payment config: %s", err.Error())
+		}
+
+		s.paymentConfig = cfg
+	}
+
+	return s.paymentConfig
+}
+
+func (s *serviceProvider) RedisConfig() config.RedisConfig {
+	if s.redisConfig == nil {
+		cfg, err := config.NewRedisConfig()
+		if err != nil {
+			log.Fatalf("failed to get redis config: %s", err.Error())
+		}
+
+		s.redisConfig = cfg
+	}
+
+	return s.redisConfig
+}
+
 func (s *serviceProvider) DBClient(ctx context.Context) db.Client {
 	if s.dbClient == nil {
 		cl, err := pg.New(ctx, s.PGConfig().DSN())
@@ -162,6 +197,21 @@ func (s *serviceProvider) TxManager(ctx context.Context) db.TxManager {
 	}
 
 	return s.txManager
+}
+
+func (s *serviceProvider) RedisClient(ctx context.Context, dbNumber int) *redis.Client {
+	if s.redisClient == nil {
+		s.redisClient = make([]*redis.Client, 16)
+	}
+	if s.redisClient[dbNumber] == nil {
+		rdb := redis.NewClient(&redis.Options{
+			Addr:     s.RedisConfig().Addr(),
+			Password: s.RedisConfig().Password(),
+			DB:       dbNumber,
+		})
+		s.redisClient[dbNumber] = rdb
+	}
+	return s.redisClient[dbNumber]
 }
 
 // ========= authentication =========
@@ -276,9 +326,25 @@ func (s *serviceProvider) CartOrderClient(ctx context.Context) cartService.IOrde
 	return s.cartOrderClient
 }
 
+func (s *serviceProvider) CartPaymentClient(ctx context.Context) cartService.IPaymentClient {
+	if s.cartPaymentClient == nil {
+		s.cartPaymentClient = cartPaymentClient.NewPaymentClient(s.PaymentConfig().CheckoutURL(), s.PaymentConfig().MerchantID(), s.PaymentConfig().MerchantPassword(), s.PaymentConfig().CallbackURL())
+	}
+
+	return s.cartPaymentClient
+}
+
+func (s *serviceProvider) CartRedisClient(ctx context.Context) cartService.IRedis {
+	if s.cartRedisClient == nil {
+		s.cartRedisClient = cartRedisClient.NewCartRedis(s.RedisClient(ctx, 0))
+	}
+
+	return s.cartRedisClient
+}
+
 func (s *serviceProvider) CartService(ctx context.Context) cartApi.ICartService {
 	if s.cartService == nil {
-		s.cartService = cartService.NewService(s.CartRepo(ctx), s.ProductService(ctx), s.CartSupplierClient(ctx), s.CartOrderClient(ctx), s.TxManager(ctx))
+		s.cartService = cartService.NewService(s.CartRepo(ctx), s.ProductService(ctx), s.CartSupplierClient(ctx), s.CartOrderClient(ctx), s.CartPaymentClient(ctx), s.CartRedisClient(ctx), s.TxManager(ctx))
 	}
 
 	return s.cartService

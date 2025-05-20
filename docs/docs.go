@@ -196,8 +196,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Checkout status",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/diploma_modules_cart_handler_model.CheckoutResponse"
                         }
                     },
                     "401": {
@@ -605,6 +604,14 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "diploma_modules_cart_handler_model.CheckoutResponse": {
+            "type": "object",
+            "properties": {
+                "checkout_url": {
                     "type": "string"
                 }
             }
