@@ -1,31 +1,76 @@
 package handler
 
-// Register godoc
-// @Summary      Put product to Card
-// @Description  --
-// @Tags         cart
+import (
+	"diploma/modules/auth/jwt"
+	"diploma/modules/user/handler/converter"
+	modelApi "diploma/modules/user/handler/model"
+	contextkeys "diploma/pkg/context-keys"
+	"net/http"
+
+	"github.com/gin-gonic/gin"
+)
+
+// GetProfile godoc
+// @Summary      Get user profile
+// @Description  Fetch the authenticated user's profile
+// @Tags         user
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200 {object} modelApi.GetUserProfileResponse
+// @Failure      401 {object} modelApi.ErrorResponse
+// @Router       /api/user/profile [get]
+func (h *UserHandler) GetUserProfile(c *gin.Context) {
+	claims, ok := c.Request.Context().Value(contextkeys.UserKey).(*jwt.Claims)
+	if !ok || claims == nil {
+		c.JSON(http.StatusUnauthorized, modelApi.ErrorResponse{Err: modelApi.ErrUnauthorized.Error()})
+		return
+	}
+
+	user, err := h.service.User(c.Request.Context(), claims.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, modelApi.ErrorResponse{Err: err.Error()})
+		return
+
+	}
+
+	c.JSON(http.StatusOK, modelApi.GetUserProfileResponse{
+		User: converter.ToApiUserFromService(user),
+	})
+}
+
+// UpdateUserProfile godoc
+// @Summary      Update user profile
+// @Description  Update the authenticated user's profile
+// @Tags         user
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
-// @Param        input body modelApi.AddProductToCartInput true "Put Card input"
-// @Success      200  {object}  modelApi.AddProductToCardResponse
-// @Failure      400  {object}  modelApi.ErrorResponse
-// @Router       /api/cart/add [post]
-// func (h *UserHandler) GetProfile(c *gin.Context) {
+// @Param        request body modelApi.UpdateUserProfileRequest true "Update Profile Request"
+// @Success      200 {object} modelApi.GetUserProfileResponse
+// @Failure      400 {object} modelApi.ErrorResponse
+// @Failure      401 {object} modelApi.ErrorResponse
+// @Failure      500 {object} modelApi.ErrorResponse
+// @Router       /api/user/profile [put]
+func (h *UserHandler) UpdateUserProfile(c *gin.Context) {
+	claims, ok := c.Request.Context().Value(contextkeys.UserKey).(*jwt.Claims)
+	if !ok || claims == nil {
+		c.JSON(http.StatusUnauthorized, modelApi.ErrorResponse{Err: modelApi.ErrUnauthorized.Error()})
+		return
+	}
 
-// 	claims, ok := c.Request.Context().Value(contextkeys.UserKey).(*jwt.Claims)
+	var req modelApi.UpdateUserProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, modelApi.ErrorResponse{Err: err.Error()})
+		return
+	}
 
-// 	if !ok || claims == nil {
-// 		c.JSON(http.StatusUnauthorized, modelApi.ErrorResponse{Err: modelApi.ErrUnauthorized.Error()})
-// 		return
-// 	}
+	user, err := h.service.UpdateUser(c.Request.Context(), converter.ToUserFromApi(claims.UserID, req))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, modelApi.ErrorResponse{Err: err.Error()})
+		return
+	}
 
-// 	var input modelApi.AddProductToCartInput
-// 	if err := c.ShouldBindJSON(&input); err != nil {
-// 		c.JSON(http.StatusBadRequest, modelApi.ErrorResponse{Err: err.Error()})
-// 		return
-// 	}
-// 	input.CustomerID = claims.UserID
-
-// 	c.JSON(http.StatusOK, modelApi.AddProductToCardResponse{Status: "ok"})
-// }
+	c.JSON(http.StatusOK, modelApi.GetUserProfileResponse{
+		User: converter.ToApiUserFromService(user),
+	})
+}

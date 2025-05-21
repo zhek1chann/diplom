@@ -252,10 +252,33 @@ definitions:
           $ref: '#/definitions/diploma_modules_user_handler_model.Address'
         type: array
     type: object
+  diploma_modules_user_handler_model.GetUserProfileResponse:
+    properties:
+      user:
+        $ref: '#/definitions/diploma_modules_user_handler_model.User'
+    type: object
   diploma_modules_user_handler_model.SetAddressInput:
     properties:
       address:
         $ref: '#/definitions/diploma_modules_user_handler_model.Address'
+    type: object
+  diploma_modules_user_handler_model.UpdateUserProfileRequest:
+    properties:
+      name:
+        type: string
+      phone_number:
+        type: string
+    type: object
+  diploma_modules_user_handler_model.User:
+    properties:
+      address:
+        $ref: '#/definitions/diploma_modules_user_handler_model.Address'
+      id:
+        type: integer
+      name:
+        type: string
+      phone_number:
+        type: string
     type: object
   gin.H:
     additionalProperties: {}
@@ -720,6 +743,60 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Set address
+      tags:
+      - user
+  /api/user/profile:
+    get:
+      description: Fetch the authenticated user's profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.GetUserProfileResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user profile
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      description: Update the authenticated user's profile
+      parameters:
+      - description: Update Profile Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/diploma_modules_user_handler_model.UpdateUserProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.GetUserProfileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Update user profile
       tags:
       - user
 securityDefinitions:

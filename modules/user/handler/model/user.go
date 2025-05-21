@@ -1,24 +1,17 @@
 package model
 
-import "errors"
-
-var (
-	ErrUnauthorized = errors.New("api: unauthorized")
-)
-
-type SetAddressInput struct {
-	Address Address `json:"address"`
+type User struct {
+	ID          int64
+	Name        string  `json:"name"`
+	PhoneNumber string  `json:"phone_number"`
+	Address     Address `json:"address"`
 }
 
-type GetAddressResponse struct {
-	AddressList []Address `json:"address_list"`
+type GetUserProfileResponse struct {
+	User User `json:"user"`
 }
 
-type Address struct {
-	Street      string `json:"street"`
-	Description string `json:"description"`
-}
-
-type ErrorResponse struct {
-	Err string `json:"error"`
+type UpdateUserProfileRequest struct {
+	Name        string `json:"name"`
+	PhoneNumber string `json:"phone_number"`
 }

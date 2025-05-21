@@ -11,5 +11,7 @@ func RegisterRoutes(router *gin.RouterGroup, h *handler.UserHandler) {
 	{
 		userRouter.POST("/address", h.SetAddress)
 		userRouter.GET("/address", h.GetAddress)
+		userRouter.GET("/profile", h.GetUserProfile)
+		userRouter.PUT("/profile", h.UpdateUserProfile)
 	}
 }

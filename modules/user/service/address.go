@@ -1,4 +1,4 @@
-package auth
+package user
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 type IAddressRepo interface {
 	CreateAddress(ctx context.Context, address model.Address) (int64, error)
-	GetByUserId(ctx context.Context, userID int64) ([]model.Address, error)
+	AddressByUserId(ctx context.Context, userID int64) ([]model.Address, error)
 	// Update(ctx context.Context, address *model.Address) error
 	Delete(ctx context.Context, addressID int64) error
 }
@@ -38,7 +38,7 @@ func (s *userServ) Address(ctx context.Context, userID int64) ([]model.Address, 
 
 	err := s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
 		var errTx error
-		addresList, errTx = s.userRepository.GetByUserId(ctx, userID)
+		addresList, errTx = s.userRepository.AddressByUserId(ctx, userID)
 		if errTx != nil {
 			return errTx
 		}
