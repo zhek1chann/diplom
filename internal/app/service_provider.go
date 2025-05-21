@@ -14,7 +14,7 @@ import (
 	authApi "diploma/modules/auth/handler"
 	authJWT "diploma/modules/auth/jwt"
 	authMiddlware "diploma/modules/auth/middleware"
-	userRepository "diploma/modules/auth/repository/user"
+	authRepository "diploma/modules/auth/repository/user"
 	authService "diploma/modules/auth/service/auth"
 
 	productApi "diploma/modules/product/handler"
@@ -36,9 +36,13 @@ import (
 	orderSupplierCleint "diploma/modules/order/client/supplier"
 	orderHander "diploma/modules/order/handler"
 	orderRepository "diploma/modules/order/repo"
-
 	// orderProductClient "diploma/modules/order/client/product"
 	orderService "diploma/modules/order/service"
+
+	userApi "diploma/modules/user/handler"
+	userRepository "diploma/modules/user/repository"
+	userService "diploma/modules/user/service"
+
 
 	"github.com/go-redis/redis/v8"
 )
@@ -88,6 +92,12 @@ type serviceProvider struct {
 	orderProductClient  orderService.IProductClient
 	orderService        *orderService.OrderService
 	orderHandler        *orderHander.OrderHandler
+
+	// user
+	userRepository userService.IUserRepository
+	userService    userApi.IUserService
+	userHandler    *userApi.UserHandler	
+
 }
 
 func newServiceProvider() *serviceProvider {
@@ -217,7 +227,7 @@ func (s *serviceProvider) RedisClient(ctx context.Context, dbNumber int) *redis.
 // ========= authentication =========
 func (s *serviceProvider) AuthRepository(ctx context.Context) authService.IAuthRepository {
 	if s.authRepository == nil {
-		s.authRepository = userRepository.NewRepository(s.DBClient(ctx))
+		s.authRepository = authRepository.NewRepository(s.DBClient(ctx))
 	}
 
 	return s.authRepository
@@ -398,4 +408,29 @@ func (s *serviceProvider) OrderHandler(ctx context.Context) *orderHander.OrderHa
 	}
 
 	return s.orderHandler
+}
+
+
+func (s *serviceProvider) UserRepo(ctx context.Context) userService.IUserRepository {
+	if s.userRepository == nil {
+		s.userRepository = userRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.userRepository
+}
+
+func (s *serviceProvider) UserService(ctx context.Context) userApi.IUserService {
+	if s.userService == nil {
+		s.userService = userService.NewService(s.UserRepo(ctx), s.TxManager(ctx))
+	}
+
+	return s.userService
+}
+
+func (s *serviceProvider) UserHandler(ctx context.Context) *userApi.UserHandler {
+	if s.userHandler == nil {
+		s.userHandler = userApi.NewHandler(s.UserService(ctx))
+	}
+
+	return s.userHandler
 }

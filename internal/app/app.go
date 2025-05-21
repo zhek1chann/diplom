@@ -8,6 +8,7 @@ import (
 	"diploma/modules/cart"
 	"diploma/modules/order"
 	"diploma/modules/product"
+	"diploma/modules/user"
 
 	"log"
 	"sync"
@@ -117,6 +118,9 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 
 	orderHandler := a.serviceProvider.OrderHandler(ctx)
 	order.RegisterRoutes(secureGroup, orderHandler)
+
+	userHandler := a.serviceProvider.UserHandler(ctx)
+	user.RegisterRoutes(secureGroup, userHandler)
 
 	a.httpServer = router
 	return nil

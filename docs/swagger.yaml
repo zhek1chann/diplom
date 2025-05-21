@@ -233,6 +233,33 @@ definitions:
       order_amount:
         type: integer
     type: object
+  diploma_modules_user_handler_model.Address:
+    properties:
+      description:
+        type: string
+      street:
+        type: string
+    type: object
+  diploma_modules_user_handler_model.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  diploma_modules_user_handler_model.GetAddressResponse:
+    properties:
+      address_list:
+        items:
+          $ref: '#/definitions/diploma_modules_user_handler_model.Address'
+        type: array
+    type: object
+  diploma_modules_user_handler_model.SetAddressInput:
+    properties:
+      address:
+        $ref: '#/definitions/diploma_modules_user_handler_model.Address'
+    type: object
+  gin.H:
+    additionalProperties: {}
+    type: object
 info:
   contact: {}
   description: This is a sample server with JWT authorization.
@@ -645,6 +672,56 @@ paths:
       summary: Get product list
       tags:
       - product
+  /api/user/address:
+    get:
+      description: Retrieve address list for a user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.GetAddressResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get address
+      tags:
+      - user
+    post:
+      consumes:
+      - application/json
+      description: --
+      parameters:
+      - description: something
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/diploma_modules_user_handler_model.SetAddressInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Set address
+      tags:
+      - user
 securityDefinitions:
   ApiKeyAuth:
     in: header
