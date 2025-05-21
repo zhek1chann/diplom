@@ -14,6 +14,7 @@ func NewHandler(service ICartService) *CartHandler {
 }
 
 type ICartService interface {
+	ClearCart(ctx context.Context, userID int64) error
 	Checkout(ctx context.Context, userID int64) (model.CheckoutResponse, error)
 	Cart(ctx context.Context, userID int64) (*model.Cart, error)
 	AddProductToCard(ctx context.Context, input *model.PutCartQuery) error

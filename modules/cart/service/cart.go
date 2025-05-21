@@ -171,4 +171,19 @@ func (s *cartServ) DeleteProductFromCart(ctx context.Context, query *model.PutCa
 		}
 		return s.cartRepo.UpdateCartTotal(ctx, cart.ID, cart.Total)
 	})
+
+}
+
+func (s *cartServ) ClearCart(ctx context.Context, userID int64) error {
+	return s.txManager.ReadCommitted(ctx, func(ctx context.Context) error {
+		cart, err := s.cartRepo.Cart(ctx, userID)
+		if err != nil {
+			return err
+		}
+		err = s.cartRepo.DeleteCartItems(ctx, cart.ID)
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 }

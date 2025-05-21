@@ -60,11 +60,12 @@ func (s *cartServ) CommitCheckout(ctx context.Context, commitCheckout model.Comm
 			if errTx != nil {
 				return errTx
 			}
-			errTx = s.cartRepo.DeleteCart(ctx, paymentOrder.Cart.ID)
+
+			errTx = s.cartRepo.DeleteCartItems(ctx, paymentOrder.Cart.ID)
 			if errTx != nil {
 				return errTx
 			}
-			errTx = s.cartRepo.DeleteCartItems(ctx, paymentOrder.Cart.ID)
+			errTx = s.cartRepo.DeleteCart(ctx, paymentOrder.Cart.ID)
 			if errTx != nil {
 				return errTx
 			}

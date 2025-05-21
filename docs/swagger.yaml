@@ -4,6 +4,57 @@ definitions:
       error:
         type: string
     type: object
+  diploma_modules_auth_handler_model.LoginInput:
+    properties:
+      password:
+        example: secure123
+        type: string
+      phone_number:
+        example: "+123456789"
+        type: string
+    type: object
+  diploma_modules_auth_handler_model.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  diploma_modules_auth_handler_model.RegisterInput:
+    properties:
+      confirm_password:
+        example: secure123
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: secure123
+        type: string
+      phone_number:
+        example: "+123456789"
+        type: string
+    type: object
+  diploma_modules_auth_handler_model.RegisterResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+    type: object
+  diploma_modules_cart_handler_model.AddProductToCardResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  diploma_modules_cart_handler_model.AddProductToCartInput:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      supplier_id:
+        type: integer
+    type: object
   diploma_modules_cart_handler_model.CheckoutResponse:
     properties:
       checkout_url:
@@ -13,6 +64,17 @@ definitions:
     properties:
       error:
         type: string
+    type: object
+  diploma_modules_cart_handler_model.GetCartResponse:
+    properties:
+      customer_id:
+        type: integer
+      suppliers:
+        items:
+          $ref: '#/definitions/diploma_modules_cart_handler_model.Supplier'
+        type: array
+      total:
+        type: integer
     type: object
   diploma_modules_cart_handler_model.Product:
     properties:
@@ -46,10 +108,24 @@ definitions:
       total_amount:
         type: integer
     type: object
+  diploma_modules_order_handler_model.CancelOrderRequest:
+    properties:
+      order_id:
+        type: integer
+    required:
+    - order_id
+    type: object
   diploma_modules_order_handler_model.ErrorResponse:
     properties:
       error:
         type: string
+    type: object
+  diploma_modules_order_handler_model.GetOrdersResponse:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/diploma_modules_order_handler_model.Order'
+        type: array
     type: object
   diploma_modules_order_handler_model.Order:
     properties:
@@ -86,6 +162,16 @@ definitions:
       name:
         type: string
     type: object
+  diploma_modules_order_handler_model.UpdateOrderStatusRequest:
+    properties:
+      new_status_id:
+        type: integer
+      order_id:
+        type: integer
+    required:
+    - new_status_id
+    - order_id
+    type: object
   diploma_modules_product_handler_model.DetailedProduct:
     properties:
       product:
@@ -111,6 +197,20 @@ definitions:
       name:
         type: string
     type: object
+  diploma_modules_product_handler_model.ProductListResponse:
+    properties:
+      product_list:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.Product'
+        type: array
+      total:
+        type: integer
+    type: object
+  diploma_modules_product_handler_model.ProductResponse:
+    properties:
+      product:
+        $ref: '#/definitions/diploma_modules_product_handler_model.DetailedProduct'
+    type: object
   diploma_modules_product_handler_model.ProductSupplier:
     properties:
       price:
@@ -133,106 +233,6 @@ definitions:
       order_amount:
         type: integer
     type: object
-  model.AddProductToCardResponse:
-    properties:
-      status:
-        type: string
-    type: object
-  model.AddProductToCartInput:
-    properties:
-      product_id:
-        type: integer
-      quantity:
-        type: integer
-      supplier_id:
-        type: integer
-    type: object
-  model.CancelOrderRequest:
-    properties:
-      order_id:
-        type: integer
-    required:
-    - order_id
-    type: object
-  model.GetCartResponse:
-    properties:
-      customer_id:
-        type: integer
-      suppliers:
-        items:
-          $ref: '#/definitions/diploma_modules_cart_handler_model.Supplier'
-        type: array
-      total:
-        type: integer
-    type: object
-  model.GetOrdersResponse:
-    properties:
-      orders:
-        items:
-          $ref: '#/definitions/diploma_modules_order_handler_model.Order'
-        type: array
-    type: object
-  model.LoginInput:
-    properties:
-      password:
-        example: secure123
-        type: string
-      phone_number:
-        example: "+123456789"
-        type: string
-    type: object
-  model.LoginResponse:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
-        type: string
-    type: object
-  model.ProductListResponse:
-    properties:
-      product_list:
-        items:
-          $ref: '#/definitions/diploma_modules_product_handler_model.Product'
-        type: array
-      total:
-        type: integer
-    type: object
-  model.ProductResponse:
-    properties:
-      product:
-        $ref: '#/definitions/diploma_modules_product_handler_model.DetailedProduct'
-    type: object
-  model.RegisterInput:
-    properties:
-      confirm_password:
-        example: secure123
-        type: string
-      name:
-        example: John Doe
-        type: string
-      password:
-        example: secure123
-        type: string
-      phone_number:
-        example: "+123456789"
-        type: string
-    type: object
-  model.RegisterResponse:
-    properties:
-      id:
-        example: 1
-        type: integer
-    type: object
-  model.UpdateOrderStatusRequest:
-    properties:
-      new_status_id:
-        type: integer
-      order_id:
-        type: integer
-    required:
-    - new_status_id
-    - order_id
-    type: object
 info:
   contact: {}
   description: This is a sample server with JWT authorization.
@@ -250,14 +250,14 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/model.LoginInput'
+          $ref: '#/definitions/diploma_modules_auth_handler_model.LoginInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.LoginResponse'
+            $ref: '#/definitions/diploma_modules_auth_handler_model.LoginResponse'
         "401":
           description: Unauthorized
           schema:
@@ -276,14 +276,14 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/model.RegisterInput'
+          $ref: '#/definitions/diploma_modules_auth_handler_model.RegisterInput'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/model.RegisterResponse'
+            $ref: '#/definitions/diploma_modules_auth_handler_model.RegisterResponse'
         "400":
           description: Bad Request
           schema:
@@ -302,7 +302,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.GetCartResponse'
+            $ref: '#/definitions/diploma_modules_cart_handler_model.GetCartResponse'
         "400":
           description: Bad Request
           schema:
@@ -323,14 +323,14 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/model.AddProductToCartInput'
+          $ref: '#/definitions/diploma_modules_cart_handler_model.AddProductToCartInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.AddProductToCardResponse'
+            $ref: '#/definitions/diploma_modules_cart_handler_model.AddProductToCardResponse'
         "400":
           description: Bad Request
           schema:
@@ -363,6 +363,31 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Process checkout operation
+      tags:
+      - cart
+  /api/cart/clear:
+    delete:
+      consumes:
+      - application/json
+      description: Deletes all products from the user's cart
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_cart_handler_model.AddProductToCardResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/diploma_modules_cart_handler_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/diploma_modules_cart_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Clear cart
       tags:
       - cart
   /api/cart/delete:
@@ -431,7 +456,7 @@ paths:
           description: List of orders
           schema:
             items:
-              $ref: '#/definitions/model.GetOrdersResponse'
+              $ref: '#/definitions/diploma_modules_order_handler_model.GetOrdersResponse'
             type: array
         "401":
           description: 'Unauthorized: invalid or missing JWT token'
@@ -493,7 +518,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/model.CancelOrderRequest'
+          $ref: '#/definitions/diploma_modules_order_handler_model.CancelOrderRequest'
       produces:
       - application/json
       responses:
@@ -535,7 +560,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/model.UpdateOrderStatusRequest'
+          $ref: '#/definitions/diploma_modules_order_handler_model.UpdateOrderStatusRequest'
       produces:
       - application/json
       responses:
@@ -562,28 +587,33 @@ paths:
       summary: Update order status by supplier
       tags:
       - orders
-  /api/product/:id:
+  /api/product/{id}:
     get:
       consumes:
       - application/json
-      description: Register a new user
+      description: Retrieve product information by its ID
       parameters:
-      - description: product id
-        in: query
-        name: product_id
+      - description: Product ID
+        in: path
+        name: id
+        required: true
         type: integer
       produces:
       - application/json
       responses:
-        "201":
-          description: Created
+        "200":
+          description: OK
           schema:
-            $ref: '#/definitions/model.ProductResponse'
+            $ref: '#/definitions/diploma_modules_product_handler_model.ProductResponse'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/diploma_modules_product_handler_model.ErrorResponse'
-      summary: User registration
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ErrorResponse'
+      summary: Get product by ID
       tags:
       - product
   /api/product/list:
@@ -607,7 +637,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/model.ProductListResponse'
+            $ref: '#/definitions/diploma_modules_product_handler_model.ProductListResponse'
         "400":
           description: Bad Request
           schema:

@@ -139,3 +139,32 @@ func (h *CartHandler) DeleteProductFromCart(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "product deleted from cart"})
 }
+
+
+
+// ClearCart godoc
+// @Summary      Clear cart
+// @Description  Deletes all products from the user's cart
+// @Tags         cart
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200  {object}  modelApi.AddProductToCardResponse
+// @Failure      401  {object}  modelApi.ErrorResponse
+// @Failure      500  {object}  modelApi.ErrorResponse
+// @Router       /api/cart/clear [delete]
+func (h *CartHandler) ClearCart(c *gin.Context) {
+	claims, ok := c.Request.Context().Value(contextkeys.UserKey).(*jwt.Claims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, modelApi.ErrorResponse{Err: modelApi.ErrUnauthorized.Error()})
+		return
+	}
+
+	err := h.service.ClearCart(c.Request.Context(), claims.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, modelApi.ErrorResponse{Err: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, modelApi.AddProductToCardResponse{Status: "ok"})
+}

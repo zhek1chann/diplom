@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -10,22 +11,24 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Register godoc
-// @Summary      User registration
-// @Description  Register a new user
+// GetProduct godoc
+// @Summary      Get product by ID
+// @Description  Retrieve product information by its ID
 // @Tags         product
 // @Accept       json
 // @Produce      json
-// @Param        product_id     query     int     false "product id"
-// @Success      201  {object}  modelApi.ProductResponse
+// @Param        id     path      int     true "Product ID"
+// @Success      200  {object}  modelApi.ProductResponse
 // @Failure      400  {object}  modelApi.ErrorResponse
-// @Router       /api/product/:id [get]
+// @Failure      404  {object}  modelApi.ErrorResponse
+// @Router       /api/product/{id} [get]
 func (h *CatalogHandler) GetProduct(c *gin.Context) {
 
 	productID := c.Param("id")
 
 	// Convert limit and offset from string to int
 	productIdInt, err := strconv.ParseInt(productID, 10, 64)
+	fmt.Println(productIdInt)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
 		return
