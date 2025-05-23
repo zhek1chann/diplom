@@ -72,10 +72,17 @@ func (s *cartServ) Cart(ctx context.Context, userID int64) (*model.Cart, error) 
 		cart, errTx = s.cartRepo.Cart(ctx, userID)
 		if errTx != nil {
 			if errors.Is(errTx, model.ErrNoRows) {
-				return model.ErrNoRows
+				cart = &model.Cart{
+					ID:         0,
+					CustomerID: userID,
+					Total:      0,
+					Suppliers:  []model.Supplier{},
+				}
+				return nil
 			}
 			return errTx
 		}
+
 		cart.Suppliers, errTx = s.cartRepo.GetCartItems(ctx, cart.ID)
 		if errTx != nil {
 			if errors.Is(errTx, model.ErrNoRows) {
