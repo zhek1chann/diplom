@@ -109,6 +109,19 @@ CREATE TABLE order_products (
     FOREIGN KEY (product_id) REFERENCES products(id)
 );
 
+CREATE TABLE contracts (
+    id SERIAL PRIMARY KEY,
+    order_id BIGINT NOT NULL,
+    supplier_id BIGINT NOT NULL,
+    customer_id BIGINT NOT NULL,
+    content TEXT NOT NULL,
+    supplier_sig TEXT,
+    customer_sig TEXT,
+    status SMALLINT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    signed_at TIMESTAMP
+);
+
 CREATE INDEX idx_order_products_order_id  ON order_products(order_id);
 CREATE INDEX idx_order_products_product_id ON order_products(product_id);
 

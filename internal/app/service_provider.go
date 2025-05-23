@@ -43,6 +43,9 @@ import (
 	userRepository "diploma/modules/user/repository"
 	userService "diploma/modules/user/service"
 
+	contractHandler "diploma/modules/contract/handler"
+	contractRepo "diploma/modules/contract/repo"
+	contractService "diploma/modules/contract/service"
 
 	"github.com/go-redis/redis/v8"
 )
@@ -96,8 +99,12 @@ type serviceProvider struct {
 	// user
 	userRepository userService.IUserRepository
 	userService    userApi.IUserService
-	userHandler    *userApi.UserHandler	
+	userHandler    *userApi.UserHandler
 
+	// contract
+	contractRepo    contractService.Repository
+	contractService *contractService.Service
+	contractHandler *contractHandler.Handler
 }
 
 func newServiceProvider() *serviceProvider {
@@ -410,7 +417,6 @@ func (s *serviceProvider) OrderHandler(ctx context.Context) *orderHander.OrderHa
 	return s.orderHandler
 }
 
-
 func (s *serviceProvider) UserRepo(ctx context.Context) userService.IUserRepository {
 	if s.userRepository == nil {
 		s.userRepository = userRepository.NewRepository(s.DBClient(ctx))
@@ -433,4 +439,25 @@ func (s *serviceProvider) UserHandler(ctx context.Context) *userApi.UserHandler 
 	}
 
 	return s.userHandler
+}
+
+func (s *serviceProvider) ContractRepo(ctx context.Context) contractService.Repository {
+	if s.contractRepo == nil {
+		s.contractRepo = contractRepo.NewRepository(s.DBClient(ctx))
+	}
+	return s.contractRepo
+}
+
+func (s *serviceProvider) ContractService(ctx context.Context) *contractService.Service {
+	if s.contractService == nil {
+		s.contractService = contractService.NewService(s.ContractRepo(ctx))
+	}
+	return s.contractService
+}
+
+func (s *serviceProvider) ContractHandler(ctx context.Context) *contractHandler.Handler {
+	if s.contractHandler == nil {
+		s.contractHandler = contractHandler.NewHandler(s.ContractService(ctx))
+	}
+	return s.contractHandler
 }

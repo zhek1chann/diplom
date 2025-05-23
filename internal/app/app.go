@@ -6,6 +6,7 @@ import (
 	"diploma/internal/config"
 	"diploma/modules/auth"
 	"diploma/modules/cart"
+	"diploma/modules/contract"
 	"diploma/modules/order"
 	"diploma/modules/product"
 	"diploma/modules/user"
@@ -118,6 +119,9 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 
 	orderHandler := a.serviceProvider.OrderHandler(ctx)
 	order.RegisterRoutes(secureGroup, orderHandler)
+
+	contractHandler := a.serviceProvider.ContractHandler(ctx)
+	contract.RegisterRoutes(secureGroup, contractHandler)
 
 	userHandler := a.serviceProvider.UserHandler(ctx)
 	user.RegisterRoutes(secureGroup, userHandler)
