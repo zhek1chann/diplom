@@ -61,6 +61,42 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*model.Contract, er
 	return &c, nil
 }
 
+func (r *Repository) GetByUser(ctx context.Context, userID int64) ([]*model.Contract, error) {
+	query, args, _ := sq.Select("*").
+		From(contractTable).
+		Where(sq.Or{
+			sq.Eq{"supplier_id": userID},
+			sq.Eq{"customer_id": userID},
+		}).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+
+	rows, err := r.db.DB().QueryContext(ctx, db.Query{Name: "contract.get_by_user", QueryRaw: query}, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var contracts []*model.Contract
+	for rows.Next() {
+		var c model.Contract
+		err := rows.Scan(
+			&c.ID, &c.OrderID, &c.SupplierID, &c.CustomerID,
+			&c.Content, &c.SupplierSig, &c.CustomerSig,
+			&c.Status, &c.CreatedAt, &c.SignedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		contracts = append(contracts, &c)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return contracts, nil
+}
+
 func (r *Repository) MarkAsSigned(ctx context.Context, contractID int64) error {
 	query, args, _ := sq.Update(contractTable).
 		Set("status", model.StatusCompleted).

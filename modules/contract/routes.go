@@ -10,5 +10,7 @@ func RegisterRoutes(router *gin.RouterGroup, h *handler.Handler) {
 	{
 		routes.POST("/sign", h.Sign)
 		routes.GET("/:id", h.Get)
+		routes.GET("", h.GetList) // /api/contract
+
 	}
 }

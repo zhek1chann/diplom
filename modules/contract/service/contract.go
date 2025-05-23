@@ -12,7 +12,8 @@ type Repository interface {
 	Create(ctx context.Context, contract *model.Contract) (int64, error)
 	SignByParty(ctx context.Context, contractID int64, role int, signature string) error
 	GetByID(ctx context.Context, id int64) (*model.Contract, error)
-	MarkAsSigned(ctx context.Context, contractID int64) error // <- Добавить эту строку
+	MarkAsSigned(ctx context.Context, contractID int64) error
+	GetByUser(ctx context.Context, userID int64) ([]*model.Contract, error) // 🔹 новый метод
 }
 
 type Service struct {
@@ -48,7 +49,6 @@ func (s *Service) SignContract(ctx context.Context, contractID int64, role int, 
 		}
 
 	case orderModel.SupplierRole:
-		// можно подписывать всегда
 	default:
 		return fmt.Errorf("unknown role")
 	}
@@ -58,7 +58,6 @@ func (s *Service) SignContract(ctx context.Context, contractID int64, role int, 
 		return err
 	}
 
-	// После обеих подписей установить signed_at
 	if role == orderModel.CustomerRole && contract.SupplierSig.Valid ||
 		role == orderModel.SupplierRole && contract.CustomerSig.Valid {
 		return s.repo.MarkAsSigned(ctx, contractID)
@@ -69,4 +68,8 @@ func (s *Service) SignContract(ctx context.Context, contractID int64, role int, 
 
 func (s *Service) GetContract(ctx context.Context, id int64) (*model.Contract, error) {
 	return s.repo.GetByID(ctx, id)
+}
+
+func (s *Service) GetContractsByUser(ctx context.Context, userID int64) ([]*model.Contract, error) {
+	return s.repo.GetByUser(ctx, userID)
 }
