@@ -16,7 +16,9 @@ func (s *userServ) User(ctx context.Context, userID int64) (model.User, error) {
 		return model.User{}, err
 	}
 
-	user.Address = addressList[0]
+	if len(addressList) > 0 {
+		user.Address = addressList[0]
+	}
 
 	return user, nil
 }
@@ -41,4 +43,3 @@ func (s *userServ) UpdateUser(ctx context.Context, user model.User) (model.User,
 
 	return userRes, nil
 }
-
