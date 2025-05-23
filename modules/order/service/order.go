@@ -119,10 +119,11 @@ func (s *OrderService) UpdateOrderStatusBySupplier(ctx context.Context, supplier
 			return fmt.Errorf("supplier %d does not own order %d", supplierID, orderID)
 		}
 
+		// Проверка допустимости перехода статуса
 		valid := false
 		switch order.StatusID {
 		case model.Pending:
-			if newStatusID == model.InProgress || newStatusID == model.Cancelled {
+			if newStatusID == model.InProgress {
 				valid = true
 			}
 		case model.InProgress:
@@ -130,11 +131,32 @@ func (s *OrderService) UpdateOrderStatusBySupplier(ctx context.Context, supplier
 				valid = true
 			}
 		}
+
 		if !valid {
 			return fmt.Errorf("invalid status transition from %d to %d", order.StatusID, newStatusID)
 		}
 
-		return s.orderRepo.UpdateOrderStatus(ctx, orderID, newStatusID)
+		// Обновляем статус
+		err = s.orderRepo.UpdateOrderStatus(ctx, orderID, newStatusID)
+		if err != nil {
+			return err
+		}
+
+		// Если переходим в InProgress — создаём контракт
+		if order.StatusID == model.Pending && newStatusID == model.InProgress {
+			_, err := s.contractClient.CreateContract(
+				ctx,
+				order.ID,
+				order.SupplierID,
+				order.CustomerID,
+				fmt.Sprintf("Контракт для заказа #%d", order.ID),
+			)
+			if err != nil {
+				return err
+			}
+		}
+
+		return nil
 	})
 }
 

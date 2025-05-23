@@ -60,3 +60,18 @@ func (r *Repository) GetByID(ctx context.Context, id int64) (*model.Contract, er
 	}
 	return &c, nil
 }
+
+func (r *Repository) MarkAsSigned(ctx context.Context, contractID int64) error {
+	query, args, _ := sq.Update(contractTable).
+		Set("status", model.StatusCompleted).
+		Set("signed_at", sq.Expr("NOW()")).
+		Where(sq.Eq{"id": contractID}).
+		PlaceholderFormat(sq.Dollar).
+		ToSql()
+
+	_, err := r.db.DB().ExecContext(ctx, db.Query{
+		Name:     "contract.mark_as_signed",
+		QueryRaw: query,
+	}, args...)
+	return err
+}

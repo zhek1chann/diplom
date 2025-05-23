@@ -1,6 +1,9 @@
 package model
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 const (
 	StatusCreated = iota
@@ -15,11 +18,11 @@ type Contract struct {
 	SupplierID  int64
 	CustomerID  int64
 	Content     string
-	SupplierSig string
-	CustomerSig string
+	SupplierSig sql.NullString
+	CustomerSig sql.NullString
 	Status      int
 	CreatedAt   time.Time
-	SignedAt    *time.Time
+	SignedAt    sql.NullTime
 }
 
 type SignatureRequest struct {

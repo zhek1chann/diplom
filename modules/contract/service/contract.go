@@ -3,6 +3,8 @@ package service
 import (
 	"context"
 	"diploma/modules/contract/model"
+	orderModel "diploma/modules/order/model"
+	"fmt"
 	"time"
 )
 
@@ -10,6 +12,7 @@ type Repository interface {
 	Create(ctx context.Context, contract *model.Contract) (int64, error)
 	SignByParty(ctx context.Context, contractID int64, role int, signature string) error
 	GetByID(ctx context.Context, id int64) (*model.Contract, error)
+	MarkAsSigned(ctx context.Context, contractID int64) error // <- Добавить эту строку
 }
 
 type Service struct {
@@ -33,7 +36,35 @@ func (s *Service) CreateContract(ctx context.Context, orderID, supplierID, custo
 }
 
 func (s *Service) SignContract(ctx context.Context, contractID int64, role int, signature string) error {
-	return s.repo.SignByParty(ctx, contractID, role, signature)
+	contract, err := s.repo.GetByID(ctx, contractID)
+	if err != nil {
+		return err
+	}
+
+	switch role {
+	case orderModel.CustomerRole:
+		if !contract.SupplierSig.Valid {
+			return fmt.Errorf("supplier has not signed the contract yet")
+		}
+
+	case orderModel.SupplierRole:
+		// можно подписывать всегда
+	default:
+		return fmt.Errorf("unknown role")
+	}
+
+	err = s.repo.SignByParty(ctx, contractID, role, signature)
+	if err != nil {
+		return err
+	}
+
+	// После обеих подписей установить signed_at
+	if role == orderModel.CustomerRole && contract.SupplierSig.Valid ||
+		role == orderModel.SupplierRole && contract.CustomerSig.Valid {
+		return s.repo.MarkAsSigned(ctx, contractID)
+	}
+
+	return nil
 }
 
 func (s *Service) GetContract(ctx context.Context, id int64) (*model.Contract, error) {

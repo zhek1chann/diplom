@@ -403,7 +403,14 @@ func (s *serviceProvider) OrderRepo(ctx context.Context) orderService.IOrderRepo
 
 func (s *serviceProvider) OrderService(ctx context.Context) *orderService.OrderService {
 	if s.orderService == nil {
-		s.orderService = orderService.NewService(s.OrderRepo(ctx), s.OrderSupplierClient(ctx), s.OrderProductClient(ctx), s.TxManager(ctx))
+		s.orderService = orderService.NewService(
+			s.OrderRepo(ctx),
+			s.OrderSupplierClient(ctx),
+			s.OrderProductClient(ctx),
+			s.OrderContractClient(ctx), // ← добавь этот вызов
+			s.TxManager(ctx),
+		)
+
 	}
 
 	return s.orderService
@@ -460,4 +467,11 @@ func (s *serviceProvider) ContractHandler(ctx context.Context) *contractHandler.
 		s.contractHandler = contractHandler.NewHandler(s.ContractService(ctx))
 	}
 	return s.contractHandler
+}
+
+func (s *serviceProvider) OrderContractClient(ctx context.Context) orderService.IContractService {
+	if s.contractService == nil {
+		s.contractService = contractService.NewService(s.ContractRepo(ctx)) // или что-то подобное
+	}
+	return s.contractService
 }

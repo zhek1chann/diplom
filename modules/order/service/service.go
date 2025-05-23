@@ -10,17 +10,24 @@ type OrderService struct {
 	orderRepo      IOrderRepository
 	supplierClient ISupplierClient
 	productClient  IProductClient
+	contractClient IContractService // 👈 Добавляем
 	txManager      db.TxManager
 }
 
-func NewService(repo IOrderRepository, supplierClient ISupplierClient, productClient IProductClient, tx db.TxManager) *OrderService {
+func NewService(
+	repo IOrderRepository,
+	supplierClient ISupplierClient,
+	productClient IProductClient,
+	contractClient IContractService, // 👈 Новый аргумент
+	tx db.TxManager,
+) *OrderService {
 	return &OrderService{
+		orderRepo:      repo,
 		supplierClient: supplierClient,
 		productClient:  productClient,
-		orderRepo:      repo,
+		contractClient: contractClient,
 		txManager:      tx,
 	}
-
 }
 
 type IOrderRepository interface {
@@ -36,4 +43,8 @@ type ISupplierClient interface {
 
 type IProductClient interface {
 	Product(ctx context.Context, id int64) (*model.Product, error)
+}
+
+type IContractService interface {
+	CreateContract(ctx context.Context, orderID, supplierID, customerID int64, content string) (int64, error)
 }

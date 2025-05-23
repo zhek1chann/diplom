@@ -4,9 +4,8 @@ import (
 	"context"
 	"diploma/modules/cart/model"
 	"fmt"
-	"strconv"
-
 	"github.com/google/uuid"
+	"strconv"
 )
 
 func (s *cartServ) Checkout(ctx context.Context, userID int64) (model.CheckoutResponse, error) {

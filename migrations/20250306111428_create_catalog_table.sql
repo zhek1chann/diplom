@@ -137,6 +137,8 @@ DROP TABLE IF EXISTS order_products;
 DROP INDEX IF EXISTS idx_orders_supplier_id;
 DROP TABLE IF EXISTS orders;
 
+DROP TABLE IF EXISTS contracts;
+
 DROP TABLE IF EXISTS cart_items;
 DROP TABLE IF EXISTS carts;
 
@@ -146,3 +148,4 @@ DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS suppliers;
 DROP TABLE IF EXISTS delivery_conditions;
 DROP TABLE IF EXISTS users;
+
