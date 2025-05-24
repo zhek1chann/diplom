@@ -4,57 +4,6 @@ definitions:
       error:
         type: string
     type: object
-  diploma_modules_auth_handler_model.LoginInput:
-    properties:
-      password:
-        example: secure123
-        type: string
-      phone_number:
-        example: "+123456789"
-        type: string
-    type: object
-  diploma_modules_auth_handler_model.LoginResponse:
-    properties:
-      access_token:
-        type: string
-      refresh_token:
-        type: string
-    type: object
-  diploma_modules_auth_handler_model.RegisterInput:
-    properties:
-      confirm_password:
-        example: secure123
-        type: string
-      name:
-        example: John Doe
-        type: string
-      password:
-        example: secure123
-        type: string
-      phone_number:
-        example: "+123456789"
-        type: string
-    type: object
-  diploma_modules_auth_handler_model.RegisterResponse:
-    properties:
-      id:
-        example: 1
-        type: integer
-    type: object
-  diploma_modules_cart_handler_model.AddProductToCardResponse:
-    properties:
-      status:
-        type: string
-    type: object
-  diploma_modules_cart_handler_model.AddProductToCartInput:
-    properties:
-      product_id:
-        type: integer
-      quantity:
-        type: integer
-      supplier_id:
-        type: integer
-    type: object
   diploma_modules_cart_handler_model.CheckoutResponse:
     properties:
       checkout_url:
@@ -64,17 +13,6 @@ definitions:
     properties:
       error:
         type: string
-    type: object
-  diploma_modules_cart_handler_model.GetCartResponse:
-    properties:
-      customer_id:
-        type: integer
-      suppliers:
-        items:
-          $ref: '#/definitions/diploma_modules_cart_handler_model.Supplier'
-        type: array
-      total:
-        type: integer
     type: object
   diploma_modules_cart_handler_model.Product:
     properties:
@@ -108,47 +46,10 @@ definitions:
       total_amount:
         type: integer
     type: object
-  diploma_modules_contract_handler_model.ContractResponse:
-    properties:
-      content:
-        type: string
-      customer_signature:
-        type: string
-      id:
-        type: integer
-      status:
-        type: integer
-      supplier_signature:
-        type: string
-    type: object
-  diploma_modules_contract_handler_model.SignRequest:
-    properties:
-      contract_id:
-        type: integer
-      signature:
-        type: string
-    required:
-    - contract_id
-    - signature
-    type: object
-  diploma_modules_order_handler_model.CancelOrderRequest:
-    properties:
-      order_id:
-        type: integer
-    required:
-    - order_id
-    type: object
   diploma_modules_order_handler_model.ErrorResponse:
     properties:
       error:
         type: string
-    type: object
-  diploma_modules_order_handler_model.GetOrdersResponse:
-    properties:
-      orders:
-        items:
-          $ref: '#/definitions/diploma_modules_order_handler_model.Order'
-        type: array
     type: object
   diploma_modules_order_handler_model.Order:
     properties:
@@ -185,16 +86,6 @@ definitions:
       name:
         type: string
     type: object
-  diploma_modules_order_handler_model.UpdateOrderStatusRequest:
-    properties:
-      new_status_id:
-        type: integer
-      order_id:
-        type: integer
-    required:
-    - new_status_id
-    - order_id
-    type: object
   diploma_modules_product_handler_model.DetailedProduct:
     properties:
       product:
@@ -219,20 +110,6 @@ definitions:
         $ref: '#/definitions/diploma_modules_product_handler_model.ProductSupplier'
       name:
         type: string
-    type: object
-  diploma_modules_product_handler_model.ProductListResponse:
-    properties:
-      product_list:
-        items:
-          $ref: '#/definitions/diploma_modules_product_handler_model.Product'
-        type: array
-      total:
-        type: integer
-    type: object
-  diploma_modules_product_handler_model.ProductResponse:
-    properties:
-      product:
-        $ref: '#/definitions/diploma_modules_product_handler_model.DetailedProduct'
     type: object
   diploma_modules_product_handler_model.ProductSupplier:
     properties:
@@ -268,30 +145,6 @@ definitions:
       error:
         type: string
     type: object
-  diploma_modules_user_handler_model.GetAddressResponse:
-    properties:
-      address_list:
-        items:
-          $ref: '#/definitions/diploma_modules_user_handler_model.Address'
-        type: array
-    type: object
-  diploma_modules_user_handler_model.GetUserProfileResponse:
-    properties:
-      user:
-        $ref: '#/definitions/diploma_modules_user_handler_model.User'
-    type: object
-  diploma_modules_user_handler_model.SetAddressInput:
-    properties:
-      address:
-        $ref: '#/definitions/diploma_modules_user_handler_model.Address'
-    type: object
-  diploma_modules_user_handler_model.UpdateUserProfileRequest:
-    properties:
-      name:
-        type: string
-      phone_number:
-        type: string
-    type: object
   diploma_modules_user_handler_model.User:
     properties:
       address:
@@ -305,6 +158,153 @@ definitions:
     type: object
   gin.H:
     additionalProperties: {}
+    type: object
+  model.AddProductToCardResponse:
+    properties:
+      status:
+        type: string
+    type: object
+  model.AddProductToCartInput:
+    properties:
+      product_id:
+        type: integer
+      quantity:
+        type: integer
+      supplier_id:
+        type: integer
+    type: object
+  model.CancelOrderRequest:
+    properties:
+      order_id:
+        type: integer
+    required:
+    - order_id
+    type: object
+  model.ContractResponse:
+    properties:
+      content:
+        type: string
+      customer_signature:
+        type: string
+      id:
+        type: integer
+      status:
+        type: integer
+      supplier_signature:
+        type: string
+    type: object
+  model.GetAddressResponse:
+    properties:
+      address_list:
+        items:
+          $ref: '#/definitions/diploma_modules_user_handler_model.Address'
+        type: array
+    type: object
+  model.GetCartResponse:
+    properties:
+      customer_id:
+        type: integer
+      suppliers:
+        items:
+          $ref: '#/definitions/diploma_modules_cart_handler_model.Supplier'
+        type: array
+      total:
+        type: integer
+    type: object
+  model.GetOrdersResponse:
+    properties:
+      orders:
+        items:
+          $ref: '#/definitions/diploma_modules_order_handler_model.Order'
+        type: array
+    type: object
+  model.GetUserProfileResponse:
+    properties:
+      user:
+        $ref: '#/definitions/diploma_modules_user_handler_model.User'
+    type: object
+  model.LoginInput:
+    properties:
+      password:
+        example: secure123
+        type: string
+      phone_number:
+        example: "+123456789"
+        type: string
+    type: object
+  model.LoginResponse:
+    properties:
+      access_token:
+        type: string
+      refresh_token:
+        type: string
+    type: object
+  model.ProductListResponse:
+    properties:
+      product_list:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.Product'
+        type: array
+      total:
+        type: integer
+    type: object
+  model.ProductResponse:
+    properties:
+      product:
+        $ref: '#/definitions/diploma_modules_product_handler_model.DetailedProduct'
+    type: object
+  model.RegisterInput:
+    properties:
+      confirm_password:
+        example: secure123
+        type: string
+      name:
+        example: John Doe
+        type: string
+      password:
+        example: secure123
+        type: string
+      phone_number:
+        example: "+123456789"
+        type: string
+    type: object
+  model.RegisterResponse:
+    properties:
+      id:
+        example: 1
+        type: integer
+    type: object
+  model.SetAddressInput:
+    properties:
+      address:
+        $ref: '#/definitions/diploma_modules_user_handler_model.Address'
+    type: object
+  model.SignRequest:
+    properties:
+      contract_id:
+        type: integer
+      signature:
+        type: string
+    required:
+    - contract_id
+    - signature
+    type: object
+  model.UpdateOrderStatusRequest:
+    properties:
+      new_status_id:
+        type: integer
+      order_id:
+        type: integer
+    required:
+    - new_status_id
+    - order_id
+    type: object
+  model.UpdateUserProfileRequest:
+    properties:
+      name:
+        type: string
+      phone_number:
+        type: string
     type: object
 info:
   contact: {}
@@ -323,14 +323,14 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_auth_handler_model.LoginInput'
+          $ref: '#/definitions/model.LoginInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_auth_handler_model.LoginResponse'
+            $ref: '#/definitions/model.LoginResponse'
         "401":
           description: Unauthorized
           schema:
@@ -349,14 +349,14 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_auth_handler_model.RegisterInput'
+          $ref: '#/definitions/model.RegisterInput'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/diploma_modules_auth_handler_model.RegisterResponse'
+            $ref: '#/definitions/model.RegisterResponse'
         "400":
           description: Bad Request
           schema:
@@ -375,7 +375,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_cart_handler_model.GetCartResponse'
+            $ref: '#/definitions/model.GetCartResponse'
         "400":
           description: Bad Request
           schema:
@@ -396,14 +396,14 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_cart_handler_model.AddProductToCartInput'
+          $ref: '#/definitions/model.AddProductToCartInput'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_cart_handler_model.AddProductToCardResponse'
+            $ref: '#/definitions/model.AddProductToCardResponse'
         "400":
           description: Bad Request
           schema:
@@ -449,7 +449,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_cart_handler_model.AddProductToCardResponse'
+            $ref: '#/definitions/model.AddProductToCardResponse'
         "401":
           description: Unauthorized
           schema:
@@ -523,7 +523,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/diploma_modules_contract_handler_model.ContractResponse'
+              $ref: '#/definitions/model.ContractResponse'
             type: array
       security:
       - ApiKeyAuth: []
@@ -547,7 +547,7 @@ paths:
         "200":
           description: Contract
           schema:
-            $ref: '#/definitions/diploma_modules_contract_handler_model.ContractResponse'
+            $ref: '#/definitions/model.ContractResponse'
         "400":
           description: Invalid ID
           schema:
@@ -582,7 +582,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_contract_handler_model.SignRequest'
+          $ref: '#/definitions/model.SignRequest'
       produces:
       - application/json
       responses:
@@ -628,7 +628,7 @@ paths:
           description: List of orders
           schema:
             items:
-              $ref: '#/definitions/diploma_modules_order_handler_model.GetOrdersResponse'
+              $ref: '#/definitions/model.GetOrdersResponse'
             type: array
         "401":
           description: 'Unauthorized: invalid or missing JWT token'
@@ -690,7 +690,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_order_handler_model.CancelOrderRequest'
+          $ref: '#/definitions/model.CancelOrderRequest'
       produces:
       - application/json
       responses:
@@ -732,7 +732,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_order_handler_model.UpdateOrderStatusRequest'
+          $ref: '#/definitions/model.UpdateOrderStatusRequest'
       produces:
       - application/json
       responses:
@@ -776,7 +776,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_product_handler_model.ProductResponse'
+            $ref: '#/definitions/model.ProductResponse'
         "400":
           description: Bad Request
           schema:
@@ -809,7 +809,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_product_handler_model.ProductListResponse'
+            $ref: '#/definitions/model.ProductListResponse'
         "400":
           description: Bad Request
           schema:
@@ -826,7 +826,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_user_handler_model.GetAddressResponse'
+            $ref: '#/definitions/model.GetAddressResponse'
         "401":
           description: Unauthorized
           schema:
@@ -850,7 +850,7 @@ paths:
         name: input
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_user_handler_model.SetAddressInput'
+          $ref: '#/definitions/model.SetAddressInput'
       produces:
       - application/json
       responses:
@@ -876,7 +876,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_user_handler_model.GetUserProfileResponse'
+            $ref: '#/definitions/model.GetUserProfileResponse'
         "401":
           description: Unauthorized
           schema:
@@ -896,14 +896,14 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/diploma_modules_user_handler_model.UpdateUserProfileRequest'
+          $ref: '#/definitions/model.UpdateUserProfileRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/diploma_modules_user_handler_model.GetUserProfileResponse'
+            $ref: '#/definitions/model.GetUserProfileResponse'
         "400":
           description: Bad Request
           schema:
@@ -919,6 +919,29 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Update user profile
+      tags:
+      - user
+  /api/user/role:
+    get:
+      description: Returns role ID for authenticated user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/gin.H'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/diploma_modules_user_handler_model.ErrorResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: Get user role
       tags:
       - user
 securityDefinitions:

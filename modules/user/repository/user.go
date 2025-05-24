@@ -18,7 +18,7 @@ const (
 )
 
 func (r *repo) UserByID(ctx context.Context, id int64) (model.User, error) {
-	builder := sq.Select(uIdColumn, uNameColumn, uPhoneNumberColumn).
+	builder := sq.Select(uIdColumn, uNameColumn, uPhoneNumberColumn, "role").
 		PlaceholderFormat(sq.Dollar).
 		From(uTableName).
 		Where(sq.Eq{uIdColumn: id})
@@ -34,7 +34,7 @@ func (r *repo) UserByID(ctx context.Context, id int64) (model.User, error) {
 	}
 
 	var user model.User
-	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&user.ID, &user.Name, &user.PhoneNumber)
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&user.ID, &user.Name, &user.PhoneNumber, &user.Role)
 	if err != nil {
 		return model.User{}, err
 	}
@@ -76,7 +76,7 @@ func (r *repo) UpdateUser(ctx context.Context, user model.User) error {
 
 // 	query, args, err := builder.ToSql()
 // 	if err != nil {
-// 		return err		
+// 		return err
 // 	}
 
 // 	q := db.Query{

@@ -74,3 +74,29 @@ func (h *UserHandler) UpdateUserProfile(c *gin.Context) {
 		User: converter.ToApiUserFromService(user),
 	})
 }
+
+// GetUserRole godoc
+// @Summary      Get user role
+// @Description  Returns role ID for authenticated user
+// @Tags         user
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200 {object} gin.H
+// @Failure      401 {object} modelApi.ErrorResponse
+// @Failure      500 {object} modelApi.ErrorResponse
+// @Router       /api/user/role [get]
+func (h *UserHandler) GetUserRole(c *gin.Context) {
+	claims, ok := c.Request.Context().Value(contextkeys.UserKey).(*jwt.Claims)
+	if !ok {
+		c.JSON(http.StatusUnauthorized, modelApi.ErrorResponse{Err: modelApi.ErrUnauthorized.Error()})
+		return
+	}
+
+	role, err := h.service.GetUserRole(c.Request.Context(), claims.UserID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, modelApi.ErrorResponse{Err: err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"role": role})
+}

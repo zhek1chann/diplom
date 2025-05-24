@@ -43,3 +43,11 @@ func (s *userServ) UpdateUser(ctx context.Context, user model.User) (model.User,
 
 	return userRes, nil
 }
+
+func (s *userServ) GetUserRole(ctx context.Context, userID int64) (int, error) {
+	user, err := s.userRepository.UserByID(ctx, userID)
+	if err != nil {
+		return 0, err
+	}
+	return user.Role, nil
+}

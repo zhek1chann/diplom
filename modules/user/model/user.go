@@ -10,6 +10,7 @@ type User struct {
 	ID          int64
 	Name        string
 	PhoneNumber string
+	Role        int
 	Address     Address
 }
 
