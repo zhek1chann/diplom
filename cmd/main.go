@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"diploma/internal/app"
-	"log"
+	"diploma/pkg/logger"
 )
 
 // @title Go JWT Swagger Example API
@@ -21,11 +21,14 @@ func main() {
 
 	a, err := app.NewApp(ctx)
 	if err != nil {
-		log.Fatalf("failed to init app: %s", err.Error())
+		logger.Fatal("Failed to initialize app", logger.Field("error", err))
 	}
 
 	err = a.Run()
 	if err != nil {
-		log.Fatalf("failed to run app: %s", err.Error())
+		logger.Fatal("Failed to run app", logger.Field("error", err))
 	}
+
+	// Ensure all logs are flushed before exiting
+	_ = logger.Sync()
 }

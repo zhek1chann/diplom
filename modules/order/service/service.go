@@ -4,13 +4,15 @@ import (
 	"context"
 	"diploma/modules/order/model"
 	"diploma/pkg/client/db"
+	"diploma/pkg/service"
 )
 
 type OrderService struct {
+	service.BaseService
 	orderRepo      IOrderRepository
 	supplierClient ISupplierClient
 	productClient  IProductClient
-	contractClient IContractService // 👈 Добавляем
+	contractClient IContractService
 	txManager      db.TxManager
 }
 
@@ -18,10 +20,11 @@ func NewService(
 	repo IOrderRepository,
 	supplierClient ISupplierClient,
 	productClient IProductClient,
-	contractClient IContractService, // 👈 Новый аргумент
+	contractClient IContractService,
 	tx db.TxManager,
 ) *OrderService {
 	return &OrderService{
+		BaseService:    service.NewBaseService("order"),
 		orderRepo:      repo,
 		supplierClient: supplierClient,
 		productClient:  productClient,

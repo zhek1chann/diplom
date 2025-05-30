@@ -4,9 +4,11 @@ import (
 	"context"
 	"diploma/modules/product/model"
 	"diploma/pkg/client/db"
+	"diploma/pkg/service"
 )
 
 type ProductService struct {
+	service.BaseService
 	productRepository IProductRepository
 	txManager         db.TxManager
 }
@@ -16,6 +18,7 @@ func NewService(
 	txManager db.TxManager,
 ) *ProductService {
 	return &ProductService{
+		BaseService:       service.NewBaseService("product"),
 		productRepository: productRepository,
 		txManager:         txManager,
 	}

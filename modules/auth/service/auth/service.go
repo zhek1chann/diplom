@@ -1,12 +1,14 @@
 package auth
 
 import (
+	"context"
 	"diploma/modules/auth/model"
 	"diploma/pkg/client/db"
-	"context"
+	"diploma/pkg/service"
 )
 
 type authServ struct {
+	service.BaseService
 	authRepository IAuthRepository
 	jwt            IJWT
 	txManager      db.TxManager
@@ -18,6 +20,7 @@ func NewService(
 	txManager db.TxManager,
 ) *authServ {
 	return &authServ{
+		BaseService:    service.NewBaseService("auth"),
 		authRepository: authRepository,
 		jwt:            jwt,
 		txManager:      txManager,

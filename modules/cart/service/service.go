@@ -4,9 +4,11 @@ import (
 	"context"
 	"diploma/modules/cart/model"
 	"diploma/pkg/client/db"
+	"diploma/pkg/service"
 )
 
 type cartServ struct {
+	service.BaseService
 	cartRepo        ICartRepository
 	productService  IProductService
 	supplierService ISupplierClient
@@ -26,6 +28,7 @@ func NewService(
 	txManager db.TxManager,
 ) *cartServ {
 	return &cartServ{
+		BaseService:     service.NewBaseService("cart"),
 		cartRepo:        cartRepository,
 		supplierService: supplierService,
 		orderService:    OrderClient,

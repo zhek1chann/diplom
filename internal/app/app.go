@@ -10,6 +10,7 @@ import (
 	"diploma/modules/order"
 	"diploma/modules/product"
 	"diploma/modules/user"
+	"diploma/pkg/logger"
 	"diploma/pkg/metrics"
 
 	"log"
@@ -27,8 +28,14 @@ type App struct {
 }
 
 func NewApp(ctx context.Context) (*App, error) {
-	app := &App{}
+	// Initialize logger first
+	env := config.GetEnv("APP_ENV", "development")
+	if err := logger.Initialize(env); err != nil {
+		return nil, err
+	}
+	logger.Info("Logger initialized", logger.Field("environment", env))
 
+	app := &App{}
 	err := app.initDeps(ctx)
 	if err != nil {
 		return nil, err
@@ -44,7 +51,7 @@ func (a *App) Run() error {
 	go func() {
 		defer wg.Done()
 		if err := a.httpServerRun(); err != nil {
-			log.Fatalf("HTTP server error: %v", err)
+			logger.Fatal("HTTP server error", logger.Field("error", err))
 		}
 	}()
 
