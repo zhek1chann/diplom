@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"diploma/modules/cart/model"
 	"diploma/pkg/client/db"
-	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 )
 
+// ItemQuantity returns the quantity of a specific item in the cart
 func (r *cartRepo) ItemQuantity(ctx context.Context, cartID, productId, supplierId int64) (int, error) {
 	builder := sq.Select(ciQuantityColumn).
 		PlaceholderFormat(sq.Dollar).
@@ -22,9 +22,8 @@ func (r *cartRepo) ItemQuantity(ctx context.Context, cartID, productId, supplier
 		})
 
 	query, args, err := builder.ToSql()
-
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to build item quantity query: %w", err)
 	}
 
 	q := db.Query{
@@ -33,18 +32,17 @@ func (r *cartRepo) ItemQuantity(ctx context.Context, cartID, productId, supplier
 	}
 
 	var quantity int
-
 	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&quantity)
-
 	if err != nil {
-		if errors.As(sql.ErrNoRows, &err) {
+		if err == sql.ErrNoRows {
 			return 0, model.ErrNoRows
 		}
-		return 0, err
+		return 0, fmt.Errorf("failed to get item quantity: %w", err)
 	}
 	return quantity, nil
 }
 
+// UpdateItemQuantity updates the quantity of a specific item in the cart
 func (r *cartRepo) UpdateItemQuantity(ctx context.Context, cartID, productId, supplierId int64, quantity int) error {
 	builder := sq.Update(cartItemTable).
 		PlaceholderFormat(sq.Dollar).
@@ -56,9 +54,8 @@ func (r *cartRepo) UpdateItemQuantity(ctx context.Context, cartID, productId, su
 		})
 
 	query, args, err := builder.ToSql()
-
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build update item quantity query: %w", err)
 	}
 
 	q := db.Query{
@@ -68,15 +65,16 @@ func (r *cartRepo) UpdateItemQuantity(ctx context.Context, cartID, productId, su
 
 	res, err := r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to update item quantity: %w", err)
 	}
 
 	if res.RowsAffected() == 0 {
-		return fmt.Errorf("not updated item")
+		return model.ErrNoRows
 	}
 	return nil
 }
 
+// AddItem adds a new item to the cart
 func (r *cartRepo) AddItem(ctx context.Context, input *model.PutCartQuery) error {
 	builder := sq.Insert(cartItemTable).
 		PlaceholderFormat(sq.Dollar).
@@ -84,9 +82,8 @@ func (r *cartRepo) AddItem(ctx context.Context, input *model.PutCartQuery) error
 		Values(input.CartID, input.SupplierID, input.ProductID, input.Price, input.Quantity)
 
 	query, args, err := builder.ToSql()
-
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build add item query: %w", err)
 	}
 
 	q := db.Query{
@@ -95,15 +92,16 @@ func (r *cartRepo) AddItem(ctx context.Context, input *model.PutCartQuery) error
 	}
 	res, err := r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to add item: %w", err)
 	}
 	if res.RowsAffected() == 0 {
-		return fmt.Errorf("no rows inserted")
+		return model.ErrNoRows
 	}
 
 	return nil
 }
 
+// DeleteCartItems removes all items from the cart
 func (r *cartRepo) DeleteCartItems(ctx context.Context, cartID int64) error {
 	builder := sq.Delete(cartItemTable).
 		PlaceholderFormat(sq.Dollar).
@@ -111,7 +109,7 @@ func (r *cartRepo) DeleteCartItems(ctx context.Context, cartID int64) error {
 
 	query, args, err := builder.ToSql()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build delete cart items query: %w", err)
 	}
 
 	q := db.Query{
@@ -121,11 +119,12 @@ func (r *cartRepo) DeleteCartItems(ctx context.Context, cartID int64) error {
 
 	_, err = r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to delete cart items: %w", err)
 	}
 	return nil
 }
 
+// DeleteItem removes a specific item from the cart
 func (r *cartRepo) DeleteItem(ctx context.Context, cartID, productId, supplierId int64) error {
 	builder := sq.Delete(cartItemTable).
 		PlaceholderFormat(sq.Dollar).
@@ -137,7 +136,7 @@ func (r *cartRepo) DeleteItem(ctx context.Context, cartID, productId, supplierId
 
 	query, args, err := builder.ToSql()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build delete item query: %w", err)
 	}
 
 	q := db.Query{
@@ -145,5 +144,8 @@ func (r *cartRepo) DeleteItem(ctx context.Context, cartID, productId, supplierId
 		QueryRaw: query,
 	}
 	_, err = r.db.DB().ExecContext(ctx, q, args...)
-	return err
+	if err != nil {
+		return fmt.Errorf("failed to delete item: %w", err)
+	}
+	return nil
 }

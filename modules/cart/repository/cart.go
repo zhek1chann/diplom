@@ -7,12 +7,12 @@ import (
 	"diploma/modules/cart/repository/converter"
 	modelRepo "diploma/modules/cart/repository/model"
 	"diploma/pkg/client/db"
-	"errors"
 	"fmt"
 
 	sq "github.com/Masterminds/squirrel"
 )
 
+// CreateCart creates a new cart for the given user
 func (r *cartRepo) CreateCart(ctx context.Context, userID int64) (int64, error) {
 	builder := sq.Insert(cartsTable).
 		PlaceholderFormat(sq.Dollar).
@@ -22,7 +22,7 @@ func (r *cartRepo) CreateCart(ctx context.Context, userID int64) (int64, error) 
 
 	query, args, err := builder.ToSql()
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to build create cart query: %w", err)
 	}
 
 	q := db.Query{
@@ -31,14 +31,14 @@ func (r *cartRepo) CreateCart(ctx context.Context, userID int64) (int64, error) 
 	}
 
 	var cartID int64
-
 	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&cartID)
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("failed to create cart: %w", err)
 	}
 	return cartID, nil
 }
 
+// Cart retrieves a cart for the given user
 func (r *cartRepo) Cart(ctx context.Context, userID int64) (*model.Cart, error) {
 	builder := sq.Select(cIDColumn, cTotalColumn, cCustomerIDColumn).
 		PlaceholderFormat(sq.Dollar).
@@ -46,9 +46,8 @@ func (r *cartRepo) Cart(ctx context.Context, userID int64) (*model.Cart, error) 
 		Where(sq.Eq{cCustomerIDColumn: userID})
 
 	query, args, err := builder.ToSql()
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build get cart query: %w", err)
 	}
 
 	q := db.Query{
@@ -57,17 +56,17 @@ func (r *cartRepo) Cart(ctx context.Context, userID int64) (*model.Cart, error) 
 	}
 
 	var cart modelRepo.Cart
-
 	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&cart.ID, &cart.Total, &cart.CustomerID)
 	if err != nil {
-		if errors.As(sql.ErrNoRows, &err) {
+		if err == sql.ErrNoRows {
 			return nil, model.ErrNoRows
 		}
-		return nil, err
+		return nil, fmt.Errorf("failed to get cart: %w", err)
 	}
 	return converter.ToServiceCartFromRepo(&cart), nil
 }
 
+// UpdateCartTotal updates the total amount for the given cart
 func (r *cartRepo) UpdateCartTotal(ctx context.Context, cartID int64, total int) error {
 	builder := sq.Update(cartsTable).
 		PlaceholderFormat(sq.Dollar).
@@ -75,9 +74,8 @@ func (r *cartRepo) UpdateCartTotal(ctx context.Context, cartID int64, total int)
 		Where(sq.Eq{cIDColumn: cartID})
 
 	query, args, err := builder.ToSql()
-
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build update cart total query: %w", err)
 	}
 
 	q := db.Query{
@@ -87,17 +85,17 @@ func (r *cartRepo) UpdateCartTotal(ctx context.Context, cartID int64, total int)
 
 	result, err := r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
-		return fmt.Errorf("error executing query: %v", err)
+		return fmt.Errorf("failed to update cart total: %w", err)
 	}
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("no rows updated")
+		return model.ErrNoRows
 	}
 
 	return nil
 }
 
+// GetCartItems retrieves all items in the given cart with their product details
 func (r *cartRepo) GetCartItems(ctx context.Context, cartID int64) ([]model.Supplier, error) {
-	// Query to select cart items and product details
 	builder := sq.Select(
 		cartItemTable+"."+ciProductIDColumn,
 		cartItemTable+"."+ciSupplierIDColumn,
@@ -112,9 +110,8 @@ func (r *cartRepo) GetCartItems(ctx context.Context, cartID int64) ([]model.Supp
 		Where(sq.Eq{ciCartIDColumn: cartID})
 
 	query, args, err := builder.ToSql()
-
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to build get cart items query: %w", err)
 	}
 
 	q := db.Query{
@@ -124,40 +121,38 @@ func (r *cartRepo) GetCartItems(ctx context.Context, cartID int64) ([]model.Supp
 
 	rows, err := r.db.DB().QueryContext(ctx, q, args...)
 	if err != nil {
-		if errors.As(sql.ErrNoRows, &err) {
+		if err == sql.ErrNoRows {
 			return nil, model.ErrNoRows
 		}
-		return nil, err
+		return nil, fmt.Errorf("failed to get cart items: %w", err)
 	}
 	defer rows.Close()
 
 	var items []modelRepo.CartItem
 	for rows.Next() {
 		var item modelRepo.CartItem
-
 		if err := rows.Scan(&item.ProductID, &item.SupplierID, &item.Quantity, &item.Price, &item.ProductName, &item.ProductImageURL); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to scan cart item: %w", err)
 		}
-
 		items = append(items, item)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error iterating cart items: %w", err)
 	}
 
 	return converter.ToServiceSupplierFromRepo(items), nil
 }
 
+// DeleteCart removes the cart and all its items
 func (r *cartRepo) DeleteCart(ctx context.Context, cartID int64) error {
 	builder := sq.Delete(cartsTable).
 		PlaceholderFormat(sq.Dollar).
 		Where(sq.Eq{cIDColumn: cartID})
 
 	query, args, err := builder.ToSql()
-
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to build delete cart query: %w", err)
 	}
 
 	q := db.Query{
@@ -167,10 +162,10 @@ func (r *cartRepo) DeleteCart(ctx context.Context, cartID int64) error {
 
 	result, err := r.db.DB().ExecContext(ctx, q, args...)
 	if err != nil {
-		return fmt.Errorf("error executing query: %v", err)
+		return fmt.Errorf("failed to delete cart: %w", err)
 	}
 	if result.RowsAffected() == 0 {
-		return fmt.Errorf("no rows deleted")
+		return model.ErrNoRows
 	}
 
 	return nil
