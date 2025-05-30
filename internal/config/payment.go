@@ -24,7 +24,7 @@ type paymentConfig struct {
 	checkoutURL      string
 	merchantID       string
 	merchantPassword string
-	callbackURL       string
+	callbackURL      string
 }
 
 func NewPaymentConfig() (PaymentConfig, error) {
@@ -46,7 +46,6 @@ func NewPaymentConfig() (PaymentConfig, error) {
 		return nil, errors.New("missing FONDY_CALLBACK_URL")
 	}
 
-
 	fmt.Println(checkoutURL)
 	return &paymentConfig{
 		checkoutURL:      checkoutURL,
@@ -67,7 +66,6 @@ func (cfg *paymentConfig) MerchantID() string {
 func (cfg *paymentConfig) MerchantPassword() string {
 	return cfg.merchantPassword
 }
-
 
 func (cfg *paymentConfig) CallbackURL() string {
 	return cfg.callbackURL

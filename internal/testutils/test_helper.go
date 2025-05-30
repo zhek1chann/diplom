@@ -52,3 +52,8 @@ func (h *AssertTestHelper) AssertEqual(expected, actual interface{}, msgAndArgs 
 func (h *AssertTestHelper) AssertNotNil(value interface{}, msgAndArgs ...interface{}) bool {
 	return assert.NotNil(h.T, value, msgAndArgs...)
 }
+
+// AssertError asserts that err is not nil
+func (h *AssertTestHelper) AssertError(err error, msgAndArgs ...interface{}) bool {
+	return assert.Error(h.T, err, msgAndArgs...)
+}

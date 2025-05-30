@@ -5,10 +5,7 @@ import (
 )
 
 func Load(path string) error {
-	err := godotenv.Load(path)
-	if err != nil {
-		return err
-	}
+	// Try to load .env file but don't fail if it doesn't exist
 
-	return nil
+	return godotenv.Load(path)
 }

@@ -10,6 +10,13 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
+var (
+	// ErrInvalidToken is returned when the token is invalid
+	ErrInvalidToken = errors.New("invalid token")
+	// ErrTokenExpired is returned when the token has expired
+	ErrTokenExpired = errors.New("token has expired")
+)
+
 type JSONWebToken struct {
 	jwtKey []byte
 }
@@ -97,13 +104,17 @@ func (sa *JSONWebToken) VerifyToken(tokenStr string) (*Claims, error) {
 		}
 		return sa.jwtKey, nil
 	})
+
 	if err != nil {
-		return nil, err
+		if errors.Is(err, jwt.ErrTokenExpired) {
+			return nil, ErrTokenExpired
+		}
+		return nil, ErrInvalidToken
 	}
 
 	claims, ok := token.Claims.(*Claims)
 	if !ok || !token.Valid {
-		return nil, errors.New("invalid token")
+		return nil, ErrInvalidToken
 	}
 	return claims, nil
 }

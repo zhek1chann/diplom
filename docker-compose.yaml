@@ -2,6 +2,8 @@ version: '3'
 
 volumes:
   postgres_volume:
+  prometheus_data:
+  grafana_data:
 
 services:
   pg:
@@ -30,18 +32,54 @@ services:
     networks:
       - diplom-net
     command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD}"]
-  # app:  
-  #   image: diploma-server:${TAG_NAME}
-  #   ports:
-  #     - "8080:8080"
-  #   volumes:
-  #     - "./.env:/root/.env"
-  #   depends_on:
-  #     - pg
-  #   networks:
-  #     - diplom-net
-  #   env_file:
-  #     - .env
+  prometheus:
+    image: prom/prometheus:v2.45.0
+    volumes:
+      - ./prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    networks:
+      - diplom-net
+    restart: always
+  grafana:
+    image: grafana/grafana:10.0.0
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3000:3000"
+    networks:
+      - diplom-net
+    restart: always
+    depends_on:
+      - prometheus
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - "./.env:/root/.env"
+    depends_on:
+      - pg
+      - redis
+    restart: on-failure
+    networks:
+      - diplom-net
+    env_file:
+      - .env
 
 networks:
   diplom-net:

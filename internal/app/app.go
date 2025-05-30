@@ -10,6 +10,7 @@ import (
 	"diploma/modules/order"
 	"diploma/modules/product"
 	"diploma/modules/user"
+	"diploma/pkg/metrics"
 
 	"log"
 	"sync"
@@ -69,11 +70,8 @@ func (a *App) initDeps(ctx context.Context) error {
 }
 
 func (a *App) initConfig(_ context.Context) error {
-	err := config.Load(".env")
-	if err != nil {
-		return err
-	}
-
+	// Try to load .env file but don't fail if it doesn't exist
+	_ = config.Load(".env")
 	return nil
 }
 
@@ -85,6 +83,9 @@ func (a *App) initServiceProvider(_ context.Context) error {
 func (a *App) initHTTPServer(ctx context.Context) error {
 	router := gin.Default()
 
+	// Add Prometheus middleware
+	router.Use(metrics.MetricsMiddleware())
+
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:3000"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
@@ -95,6 +96,9 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 		corsMiddleware.HandlerFunc(c.Writer, c.Request)
 		c.Next()
 	})
+
+	// Add Prometheus metrics endpoint
+	metrics.RegisterMetricsEndpoint(router)
 
 	docs.SwaggerInfo.BasePath = ""
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))

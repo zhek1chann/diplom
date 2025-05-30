@@ -5,9 +5,94 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/suite"
 )
+
+type JWTTestSuite struct {
+	suite.Suite
+	jwt *JSONWebToken
+}
+
+func TestJWT(t *testing.T) {
+	suite.Run(t, new(JWTTestSuite))
+}
+
+func (s *JWTTestSuite) SetupTest() {
+	s.jwt = NewJSONWebToken("test-secret-key")
+}
+
+func (s *JWTTestSuite) TestGenerateJSONWebTokens_Success() {
+	userID := int64(1)
+	username := "testuser"
+	role := 0 // CustomerRole
+
+	accessToken, refreshToken, err := s.jwt.GenerateJSONWebTokens(userID, username, role)
+
+	assert.NoError(s.T(), err)
+	assert.NotEmpty(s.T(), accessToken)
+	assert.NotEmpty(s.T(), refreshToken)
+
+	// Verify access token
+	claims, err := s.jwt.VerifyToken(accessToken)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), userID, claims.UserID)
+	assert.Equal(s.T(), username, claims.Username)
+	assert.Equal(s.T(), role, claims.Role)
+}
+
+func (s *JWTTestSuite) TestRefreshAccessToken_Success() {
+	userID := int64(1)
+	username := "testuser"
+	role := 0 // CustomerRole
+
+	// Generate initial tokens
+	_, refreshToken, err := s.jwt.GenerateJSONWebTokens(userID, username, role)
+	assert.NoError(s.T(), err)
+
+	// Use refresh token to get new access token
+	newAccessToken, err := s.jwt.RefreshAccessToken(refreshToken)
+	assert.NoError(s.T(), err)
+	assert.NotEmpty(s.T(), newAccessToken)
+
+	// Verify new access token
+	claims, err := s.jwt.VerifyToken(newAccessToken)
+	assert.NoError(s.T(), err)
+	assert.Equal(s.T(), userID, claims.UserID)
+	assert.Equal(s.T(), username, claims.Username)
+	assert.Equal(s.T(), role, claims.Role)
+}
+
+func (s *JWTTestSuite) TestVerifyToken_InvalidToken() {
+	// Test with invalid token
+	_, err := s.jwt.VerifyToken("invalid.token.here")
+	assert.Error(s.T(), err)
+
+	// Test with expired token
+	expiredToken := s.generateExpiredToken()
+	_, err = s.jwt.VerifyToken(expiredToken)
+	assert.Error(s.T(), err)
+}
+
+func (s *JWTTestSuite) TestRefreshAccessToken_InvalidToken() {
+	_, err := s.jwt.RefreshAccessToken("invalid.refresh.token")
+	assert.Error(s.T(), err)
+}
+
+func (s *JWTTestSuite) generateExpiredToken() string {
+	claims := &Claims{
+		UserID:   1,
+		Username: "testuser",
+		Role:     0,
+	}
+	claims.ExpiresAt.Time = time.Now().Add(-time.Hour) // Expired 1 hour ago
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, _ := token.SignedString(s.jwt.jwtKey)
+	return tokenString
+}
 
 func TestJWTOperations(t *testing.T) {
 	// Initialize JWT with a test secret

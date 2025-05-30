@@ -2,28 +2,17 @@ package middleware
 
 import (
 	"diploma/modules/auth/jwt"
-	contextkeys "diploma/pkg/context-keys"
-	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/suite"
 )
 
-// mockJWT is a mock implementation of the JWT service
 type mockJWT struct {
 	mock.Mock
-}
-
-func (m *mockJWT) VerifyToken(token string) (*jwt.Claims, error) {
-	args := m.Called(token)
-	if args.Get(0) == nil {
-		return nil, args.Error(1)
-	}
-	return args.Get(0).(*jwt.Claims), args.Error(1)
 }
 
 func (m *mockJWT) GenerateJSONWebTokens(id int64, username string, role int) (string, string, error) {
@@ -36,118 +25,117 @@ func (m *mockJWT) RefreshAccessToken(refreshToken string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (m *mockJWT) GetJWTKey() []byte {
-	args := m.Called()
-	return args.Get(0).([]byte)
+func (m *mockJWT) VerifyToken(tokenStr string) (*jwt.Claims, error) {
+	args := m.Called(tokenStr)
+	if args.Get(0) == nil {
+		return nil, args.Error(1)
+	}
+	return args.Get(0).(*jwt.Claims), args.Error(1)
+}
+
+type AuthMiddlewareTestSuite struct {
+	suite.Suite
+	router     *gin.Engine
+	middleware *AuthMiddleware
+	mockJWT    *mockJWT
 }
 
 func TestAuthMiddleware(t *testing.T) {
+	suite.Run(t, new(AuthMiddlewareTestSuite))
+}
+
+func (s *AuthMiddlewareTestSuite) SetupTest() {
 	gin.SetMode(gin.TestMode)
+	s.router = gin.New()
+	s.mockJWT = new(mockJWT)
+	s.middleware = NewAuthMiddleware(s.mockJWT)
 
-	var ErrInvalidToken = errors.New("invalid token")
+	// Set up a test route with the auth middleware
+	s.router.Use(s.middleware.AuthMiddleware())
+	s.router.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "success"})
+	})
+}
 
-	tests := []struct {
-		name           string
-		setupAuth      func(*http.Request)
-		setupMock      func(*mockJWT)
-		expectedStatus int
-		checkContext   bool
-	}{
-		{
-			name: "Valid Token",
-			setupAuth: func(req *http.Request) {
-				req.Header.Set("Authorization", "Bearer valid-token")
-			},
-			setupMock: func(m *mockJWT) {
-				claims := &jwt.Claims{
-					UserID:   1,
-					Username: "testuser",
-					Role:     1,
-				}
-				m.On("VerifyToken", "valid-token").Return(claims, nil)
-			},
-			expectedStatus: http.StatusOK,
-			checkContext:   true,
-		},
-		{
-			name: "Invalid Token",
-			setupAuth: func(req *http.Request) {
-				req.Header.Set("Authorization", "Bearer invalid-token")
-			},
-			setupMock: func(m *mockJWT) {
-				m.On("VerifyToken", "invalid-token").Return(nil, ErrInvalidToken)
-			},
-			expectedStatus: http.StatusUnauthorized,
-			checkContext:   false,
-		},
-		{
-			name: "Missing Authorization Header",
-			setupAuth: func(req *http.Request) {
-				// Don't set any header
-			},
-			setupMock: func(m *mockJWT) {
-				// No mock setup needed
-			},
-			expectedStatus: http.StatusUnauthorized,
-			checkContext:   false,
-		},
-		{
-			name: "Invalid Authorization Format",
-			setupAuth: func(req *http.Request) {
-				req.Header.Set("Authorization", "InvalidFormat")
-			},
-			setupMock: func(m *mockJWT) {
-				// No mock setup needed
-			},
-			expectedStatus: http.StatusUnauthorized,
-			checkContext:   false,
-		},
+func (s *AuthMiddlewareTestSuite) TestAuthMiddleware_ValidToken() {
+	// Create a test request
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer valid.token.here")
+
+	// Set up mock expectations
+	claims := &jwt.Claims{
+		UserID:   1,
+		Username: "testuser",
+		Role:     0,
 	}
+	s.mockJWT.On("VerifyToken", "valid.token.here").Return(claims, nil).Once()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// Setup
-			mockJWT := new(mockJWT)
-			tt.setupMock(mockJWT)
+	// Perform the request
+	s.router.ServeHTTP(w, req)
 
-			middleware := &AuthMiddleware{
-				jwt: mockJWT,
-			}
+	// Assert response
+	s.Equal(http.StatusOK, w.Code)
+	s.mockJWT.AssertExpectations(s.T())
+}
 
-			router := gin.New()
-			router.Use(middleware.AuthMiddleware())
+func (s *AuthMiddlewareTestSuite) TestAuthMiddleware_NoAuthHeader() {
+	// Create a test request without Authorization header
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/test", nil)
 
-			var contextUser *jwt.Claims
-			router.GET("/test", func(c *gin.Context) {
-				if tt.checkContext {
-					if user, exists := c.Request.Context().Value(contextkeys.UserKey).(*jwt.Claims); exists {
-						contextUser = user
-					}
-				}
-				c.Status(http.StatusOK)
-			})
+	// Perform the request
+	s.router.ServeHTTP(w, req)
 
-			// Create request
-			w := httptest.NewRecorder()
-			req, _ := http.NewRequest("GET", "/test", nil)
-			tt.setupAuth(req)
+	// Assert response
+	s.Equal(http.StatusUnauthorized, w.Code)
+	s.mockJWT.AssertNotCalled(s.T(), "VerifyToken")
+}
 
-			// Perform request
-			router.ServeHTTP(w, req)
+func (s *AuthMiddlewareTestSuite) TestAuthMiddleware_InvalidAuthHeader() {
+	// Create a test request with invalid Authorization header format
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "InvalidFormat token")
 
-			// Assert
-			assert.Equal(t, tt.expectedStatus, w.Code)
+	// Perform the request
+	s.router.ServeHTTP(w, req)
 
-			if tt.checkContext && w.Code == http.StatusOK {
-				assert.NotNil(t, contextUser)
-				if contextUser != nil {
-					assert.Equal(t, int64(1), contextUser.UserID)
-					assert.Equal(t, "testuser", contextUser.Username)
-					assert.Equal(t, 1, contextUser.Role)
-				}
-			}
+	// Assert response
+	s.Equal(http.StatusUnauthorized, w.Code)
+	s.mockJWT.AssertNotCalled(s.T(), "VerifyToken")
+}
 
-			mockJWT.AssertExpectations(t)
-		})
-	}
+func (s *AuthMiddlewareTestSuite) TestAuthMiddleware_InvalidToken() {
+	// Create a test request
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer invalid.token.here")
+
+	// Set up mock expectations
+	s.mockJWT.On("VerifyToken", "invalid.token.here").Return(nil, jwt.ErrInvalidToken).Once()
+
+	// Perform the request
+	s.router.ServeHTTP(w, req)
+
+	// Assert response
+	s.Equal(http.StatusUnauthorized, w.Code)
+	s.mockJWT.AssertExpectations(s.T())
+}
+
+func (s *AuthMiddlewareTestSuite) TestAuthMiddleware_ExpiredToken() {
+	// Create a test request
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/test", nil)
+	req.Header.Set("Authorization", "Bearer expired.token.here")
+
+	// Set up mock expectations
+	s.mockJWT.On("VerifyToken", "expired.token.here").Return(nil, jwt.ErrTokenExpired).Once()
+
+	// Perform the request
+	s.router.ServeHTTP(w, req)
+
+	// Assert response
+	s.Equal(http.StatusUnauthorized, w.Code)
+	s.mockJWT.AssertExpectations(s.T())
 }

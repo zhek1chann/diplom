@@ -5,6 +5,7 @@ import (
 	"diploma/internal/testutils"
 	"diploma/modules/auth/model"
 	"diploma/pkg/client/db"
+	"errors"
 	"testing"
 	"time"
 
@@ -43,6 +44,9 @@ type mockTxManager struct {
 
 func (m *mockTxManager) ReadCommitted(ctx context.Context, h db.Handler) error {
 	args := m.Called(ctx, h)
+	if h != nil {
+		_ = h(ctx)
+	}
 	return args.Error(0)
 }
 
@@ -81,65 +85,127 @@ func (s *AuthServiceTestSuite) SetupTest() {
 	s.service = NewService(s.authRepository, s.jwt, s.txManager)
 }
 
-func (s *AuthServiceTestSuite) TestGetUserById_Success() {
-	expectedUser := &model.User{
-		ID: 1,
-		Info: &model.UserInfo{
-			Name:        "testuser",
-			PhoneNumber: "+1234567890",
-			Role:        model.CustomerRole,
-		},
-		CreatedAt: time.Now(),
-	}
-
-	s.authRepository.On("GetById", mock.Anything, int64(1)).Return(expectedUser, nil)
-
-	user, err := s.service.authRepository.GetById(context.Background(), 1)
-
-	s.helper.AssertNoError(err)
-	s.helper.AssertNotNil(user)
-	s.helper.AssertEqual(expectedUser.ID, user.ID)
-	s.helper.AssertEqual(expectedUser.Info.Name, user.Info.Name)
-	s.helper.AssertEqual(expectedUser.Info.Role, user.Info.Role)
-}
-
-func (s *AuthServiceTestSuite) TestGetByPhoneNumber_Success() {
-	expectedUser := &model.AuthUser{
-		ID: 1,
-		Info: &model.UserInfo{
-			Name:        "testuser",
-			PhoneNumber: "+1234567890",
-			Role:        model.CustomerRole,
-		},
-		Password: "hashedpassword",
-	}
-
-	s.authRepository.On("GetByPhoneNumber", mock.Anything, "+1234567890").Return(expectedUser, nil)
-
-	user, err := s.service.authRepository.GetByPhoneNumber(context.Background(), "+1234567890")
-
-	s.helper.AssertNoError(err)
-	s.helper.AssertNotNil(user)
-	s.helper.AssertEqual(expectedUser.ID, user.ID)
-	s.helper.AssertEqual(expectedUser.Info.PhoneNumber, user.Info.PhoneNumber)
-	s.helper.AssertEqual(expectedUser.Password, user.Password)
-}
-
-func (s *AuthServiceTestSuite) TestCreate_Success() {
+func (s *AuthServiceTestSuite) TestRegister_Success() {
 	newUser := &model.AuthUser{
 		Info: &model.UserInfo{
 			Name:        "testuser",
 			PhoneNumber: "+1234567890",
 			Role:        model.CustomerRole,
 		},
-		Password: "hashedpassword",
+		Password: "password123",
 	}
 
 	expectedID := int64(1)
-	s.authRepository.On("Create", mock.Anything, newUser).Return(expectedID, nil)
+	expectedUser := &model.User{
+		ID:        expectedID,
+		Info:      newUser.Info,
+		CreatedAt: time.Now(),
+	}
 
-	id, err := s.service.authRepository.Create(context.Background(), newUser)
+	s.authRepository.On("Create", mock.Anything, mock.MatchedBy(func(u *model.AuthUser) bool {
+		return u.Info.Name == newUser.Info.Name && u.Info.PhoneNumber == newUser.Info.PhoneNumber
+	})).Return(expectedID, nil).Once()
+
+	s.authRepository.On("GetById", mock.Anything, expectedID).Return(expectedUser, nil).Once()
+
+	s.txManager.On("ReadCommitted", mock.Anything, mock.AnythingOfType("db.Handler")).Return(nil).Once()
+
+	id, err := s.service.Register(context.Background(), newUser)
 
 	s.helper.AssertNoError(err)
 	s.helper.AssertEqual(expectedID, id)
+	s.authRepository.AssertExpectations(s.T())
+	s.txManager.AssertExpectations(s.T())
+}
+
+func (s *AuthServiceTestSuite) TestRegister_AdminRole_Failure() {
+	newUser := &model.AuthUser{
+		Info: &model.UserInfo{
+			Name:        "admin",
+			PhoneNumber: "+1234567890",
+			Role:        model.AdminRole,
+		},
+		Password: "password123",
+	}
+
+	_, err := s.service.Register(context.Background(), newUser)
+
+	s.helper.AssertError(err)
+	s.helper.AssertEqual("admin role is not allowed", err.Error())
+	s.authRepository.AssertNotCalled(s.T(), "Create")
+}
+
+func (s *AuthServiceTestSuite) TestLogin_Success() {
+	phoneNumber := "+1234567890"
+	password := "password123"
+	hashedPassword := "$2a$10$abcdefghijklmnopqrstuvwxyz" // This would be a real bcrypt hash
+	userID := int64(1)
+	userName := "testuser"
+	userRole := model.CustomerRole
+
+	storedUser := &model.AuthUser{
+		ID: userID,
+		Info: &model.UserInfo{
+			Name:        userName,
+			PhoneNumber: phoneNumber,
+			Role:        userRole,
+		},
+		HashedPassword: hashedPassword,
+	}
+
+	expectedAccessToken := "access.token.123"
+	expectedRefreshToken := "refresh.token.123"
+
+	s.authRepository.On("GetByPhoneNumber", mock.Anything, phoneNumber).Return(storedUser, nil).Once()
+	s.jwt.On("GenerateJSONWebTokens", userID, userName, userRole).Return(expectedAccessToken, expectedRefreshToken, nil).Once()
+
+	accessToken, refreshToken, err := s.service.Login(context.Background(), phoneNumber, password)
+
+	s.helper.AssertNoError(err)
+	s.helper.AssertEqual(expectedAccessToken, accessToken)
+	s.helper.AssertEqual(expectedRefreshToken, refreshToken)
+	s.authRepository.AssertExpectations(s.T())
+	s.jwt.AssertExpectations(s.T())
+}
+
+func (s *AuthServiceTestSuite) TestLogin_InvalidCredentials() {
+	phoneNumber := "+1234567890"
+	password := "wrongpassword"
+
+	s.authRepository.On("GetByPhoneNumber", mock.Anything, phoneNumber).Return(nil, model.ErrNoRows).Once()
+
+	accessToken, refreshToken, err := s.service.Login(context.Background(), phoneNumber, password)
+
+	s.helper.AssertError(err)
+	s.helper.AssertEqual(model.ErrInvalidCredentials, err)
+	s.helper.AssertEqual("", accessToken)
+	s.helper.AssertEqual("", refreshToken)
+	s.authRepository.AssertExpectations(s.T())
+	s.jwt.AssertNotCalled(s.T(), "GenerateJSONWebTokens")
+}
+
+func (s *AuthServiceTestSuite) TestRegister_RepositoryError() {
+	newUser := &model.AuthUser{
+		Info: &model.UserInfo{
+			Name:        "testuser",
+			PhoneNumber: "+1234567890",
+			Role:        model.CustomerRole,
+		},
+		Password: "password123",
+	}
+
+	expectedError := errors.New("database error")
+	s.authRepository.On("Create", mock.Anything, mock.MatchedBy(func(u *model.AuthUser) bool {
+		return u.Info.Name == newUser.Info.Name && u.Info.PhoneNumber == newUser.Info.PhoneNumber
+	})).Return(int64(0), expectedError).Once()
+
+	s.txManager.On("ReadCommitted", mock.Anything, mock.AnythingOfType("db.Handler")).Return(expectedError).Once()
+
+	id, err := s.service.Register(context.Background(), newUser)
+
+	s.helper.AssertError(err)
+	s.helper.AssertEqual(int64(0), id)
+	s.helper.AssertEqual(expectedError, err)
+	s.authRepository.AssertExpectations(s.T())
+	s.txManager.AssertExpectations(s.T())
 }
