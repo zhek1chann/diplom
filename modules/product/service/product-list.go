@@ -58,3 +58,36 @@ func (s *ProductService) ProductListByIDList(ctx context.Context, idList []int64
 
 	return productList, nil
 }
+
+func (s *ProductService) GetProductListBySupplier(ctx context.Context, supplierID int64, limit, offset int) (*model.ProductList, error) {
+	s.LogInfo(ctx, "Fetching product list by supplier",
+		zap.Int64("supplier_id", supplierID),
+		zap.Int("offset", offset),
+		zap.Int("limit", limit),
+	)
+
+	productList, err := s.productRepository.GetProductListBySupplier(ctx, supplierID, limit, offset)
+	if err != nil {
+		s.LogError(ctx, "Failed to get product list by supplier", err)
+		return nil, err
+	}
+
+	total, err := s.productRepository.GetTotalProductsBySupplier(ctx, supplierID)
+	if err != nil {
+		s.LogError(ctx, "Failed to get total products count by supplier", err)
+		return nil, err
+	}
+
+	result := &model.ProductList{
+		Products: productList,
+		Total:    total,
+	}
+
+	s.LogInfo(ctx, "Successfully fetched product list by supplier",
+		zap.Int64("supplier_id", supplierID),
+		zap.Int("total_products", total),
+		zap.Int("returned_products", len(productList)),
+	)
+
+	return result, nil
+}

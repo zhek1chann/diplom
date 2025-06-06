@@ -5,7 +5,6 @@ import (
 	"diploma/modules/cart/model"
 	orderModel "diploma/modules/order/model"
 	order "diploma/modules/order/service"
-	"fmt"
 )
 
 type OrderClient struct {
@@ -18,7 +17,6 @@ func NewClient(orderService *order.OrderService) *OrderClient {
 
 func (a *OrderClient) CreateOrder(ctx context.Context, cart *model.Cart) error {
 	orders := cartToOrder(cart)
-	fmt.Println(orders)
 	if err := a.orderService.CreateOrder(ctx, orders); err != nil {
 		return err
 	}

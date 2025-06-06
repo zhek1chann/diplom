@@ -125,6 +125,8 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 	secureGroup := router.Group("/api")
 	secureGroup.Use(authMiddleware.AuthMiddleware())
 
+	product.RegisterSecureRoutes(secureGroup, productHandler)
+
 	cartGroup := a.serviceProvider.CartHandler(ctx)
 	cart.RegisterRoutes(secureGroup, cartGroup)
 

@@ -17,6 +17,7 @@ import (
 	authRepository "diploma/modules/auth/repository/user"
 	authService "diploma/modules/auth/service/auth"
 
+	"diploma/modules/product/client/nct"
 	productApi "diploma/modules/product/handler"
 	productRepository "diploma/modules/product/repository/product"
 	productService "diploma/modules/product/service"
@@ -36,6 +37,7 @@ import (
 	orderSupplierCleint "diploma/modules/order/client/supplier"
 	orderHander "diploma/modules/order/handler"
 	orderRepository "diploma/modules/order/repo"
+
 	// orderProductClient "diploma/modules/order/client/product"
 	orderService "diploma/modules/order/service"
 
@@ -57,10 +59,12 @@ type serviceProvider struct {
 	swaggerConfig config.SwaggerConfig
 	paymentConfig config.PaymentConfig
 	redisConfig   config.RedisConfig
+	nctConfig     config.NCTConfig
 
 	dbClient    db.Client
 	txManager   db.TxManager
 	redisClient []*redis.Client
+	nctClient   *nct.NCTParser
 
 	// auth
 	authRepository authService.IAuthRepository
@@ -189,6 +193,19 @@ func (s *serviceProvider) RedisConfig() config.RedisConfig {
 	return s.redisConfig
 }
 
+func (s *serviceProvider) NCTConfig() config.NCTConfig {
+	if s.nctConfig == nil {
+		cfg, err := config.NewNCTConfig()
+		if err != nil {
+			log.Fatalf("failed to get NCT config: %s", err.Error())
+		}
+
+		s.nctConfig = cfg
+	}
+
+	return s.nctConfig
+}
+
 func (s *serviceProvider) DBClient(ctx context.Context) db.Client {
 	if s.dbClient == nil {
 		cl, err := pg.New(ctx, s.PGConfig().DSN())
@@ -282,9 +299,21 @@ func (s *serviceProvider) ProductRepository(ctx context.Context) productService.
 	return s.productRepository
 }
 
+func (s *serviceProvider) NewNCTParser(ctx context.Context) *nct.NCTParser {
+	if s.nctClient == nil {
+		s.nctClient = nct.NewNCTParser(s.NCTConfig().BaseURL())
+	}
+
+	return s.nctClient
+}
+
 func (s *serviceProvider) ProductService(ctx context.Context) *productService.ProductService {
 	if s.productService == nil {
-		s.productService = productService.NewService(s.ProductRepository(ctx), s.TxManager(ctx))
+		s.productService = productService.NewService(
+			s.ProductRepository(ctx),
+			s.TxManager(ctx),
+			s.NewNCTParser(ctx),
+		)
 	}
 
 	return s.productService

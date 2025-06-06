@@ -64,22 +64,22 @@ services:
     restart: always
     depends_on:
       - prometheus
-  # app:
-  #   build:
-  #     context: .
-  #     dockerfile: Dockerfile
-  #   ports:
-  #     - "8080:8080"
-  #   volumes:
-  #     - "./.env:/root/.env"
-  #   depends_on:
-  #     - pg
-  #     - redis
-  #   restart: on-failure
-  #   networks:
-  #     - diplom-net
-  #   env_file:
-  #     - .env
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - "./.env:/root/.env"
+    depends_on:
+      - pg
+      - redis
+    restart: on-failure
+    networks:
+      - diplom-net
+    env_file:
+      - .env
 
 networks:
   diplom-net:

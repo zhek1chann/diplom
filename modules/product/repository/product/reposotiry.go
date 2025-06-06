@@ -356,3 +356,232 @@ func (r *repo) GetProductPriceBySupplier(ctx context.Context, productID, supplie
 	}
 	return price, nil
 }
+
+// GetProductByGTIN retrieves a product by its GTIN
+func (r *repo) GetProductByGTIN(ctx context.Context, gtin int64) (*model.Product, error) {
+	builder := sq.
+		Select(
+			pIdCol,
+			pNameCol,
+			pImageUrlCol,
+			pGTINCol,
+			pCreatedAtCol,
+			pUpdatedAtCol,
+		).
+		From(productsTbl).
+		Where(sq.Eq{pGTINCol: gtin}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build get product by GTIN query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetProductByGTIN",
+		QueryRaw: query,
+	}
+
+	var product repoModel.Product
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(
+		&product.ID,
+		&product.Name,
+		&product.ImageUrl,
+		&product.GTIN,
+		&product.CreatedAt,
+		&product.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, model.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to get product by GTIN: %w", err)
+	}
+
+	return converter.ToProductFromRepo(product), nil
+}
+
+// CreateProduct creates a new product in the database
+func (r *repo) CreateProduct(ctx context.Context, product *model.Product) (int64, error) {
+	builder := sq.
+		Insert(productsTbl).
+		Columns(
+			pNameCol,
+			pImageUrlCol,
+			pGTINCol,
+			pCreatedAtCol,
+			pUpdatedAtCol,
+		).
+		Values(
+			product.Name,
+			product.ImageUrl,
+			product.GTIN,
+			product.CreatedAt,
+			product.UpdatedAt,
+		).
+		Suffix(fmt.Sprintf("RETURNING %s", pIdCol)).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return 0, fmt.Errorf("failed to build create product query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.CreateProduct",
+		QueryRaw: query,
+	}
+
+	var id int64
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&id)
+	if err != nil {
+		return 0, fmt.Errorf("failed to create product: %w", err)
+	}
+
+	return id, nil
+}
+
+// CreateProductSupplier creates a new product-supplier record in the database.
+func (r *repo) CreateProductSupplier(ctx context.Context, supplierID, productID int64, price int) error {
+	builder := sq.
+		Insert(productsSupplierTbl).
+		Columns(
+			psProductIDCol,
+			psSupplierIDCol,
+			psPriceCol,
+			psSellAmountCol,
+		).
+		Values(
+			productID,
+			supplierID,
+			price,
+			0, // default sell_amount value
+		).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return fmt.Errorf("failed to build create product supplier query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.CreateProductSupplier",
+		QueryRaw: query,
+	}
+
+	_, err = r.db.DB().ExecContext(ctx, q, args...)
+	if err != nil {
+		return fmt.Errorf("failed to create product supplier: %w", err)
+	}
+	return nil
+}
+
+// GetProductListBySupplier retrieves a list of products for a specific supplier
+func (r *repo) GetProductListBySupplier(ctx context.Context, supplierID int64, limit, offset int) ([]model.Product, error) {
+	builder := sq.Select(
+		"p."+pIdCol+" AS product_id",
+		"p."+pNameCol+" AS product_name",
+		"p."+pImageUrlCol+" AS product_image_url",
+		"p."+pGTINCol+" AS product_gtin",
+		"ps."+psPriceCol+" AS ps_price",
+		"ps."+psSellAmountCol+" AS ps_sell_amount",
+		"s."+sNameCol+" AS supplier_name",
+		"s."+sOrderAmountCol+" AS supplier_order_amount",
+		"dc."+dcFreeDeliveryAmountCol+" AS dc_min_free_delivery_amount",
+		"dc."+dcDeliveryFeeCol+" AS dc_delivery_fee",
+	).
+		From(productsTbl + " AS p").
+		Join(productsSupplierTbl + " AS ps ON ps." + psProductIDCol + " = p." + pIdCol).
+		Join(supplierTbl + " AS s ON s." + sIDCol + " = ps." + psSupplierIDCol).
+		LeftJoin(deliveryConditionTbl + " AS dc ON dc." + dcIDCol + " = s." + sDeliveryConditionIDCol).
+		Where(sq.Eq{"ps." + psSupplierIDCol: supplierID}).
+		PlaceholderFormat(sq.Dollar)
+
+	if limit > 0 {
+		builder = builder.Limit(uint64(limit))
+	} else {
+		builder = builder.Limit(30)
+	}
+	if offset > 0 {
+		builder = builder.Offset(uint64(offset))
+	}
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build get product list by supplier query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetProductListBySupplier",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get product list by supplier: %w", err)
+	}
+	defer rows.Close()
+
+	var productList []repoModel.Product
+	for rows.Next() {
+		var (
+			p  repoModel.Product
+			ps repoModel.ProductSupplier
+			s  repoModel.Supplier
+		)
+
+		err := rows.Scan(
+			&p.ID,
+			&p.Name,
+			&p.ImageUrl,
+			&p.GTIN,
+			&ps.Price,
+			&ps.SellAmount,
+			&s.Name,
+			&s.OrderAmount,
+			&s.FreeDeliveryAmount,
+			&s.DeliveryFee,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan product: %w", err)
+		}
+
+		ps.Supplier = s
+		p.LowestSupplier = ps
+		productList = append(productList, p)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating products: %w", err)
+	}
+
+	return converter.ToProductListFromRepo(productList), nil
+}
+
+// GetTotalProductsBySupplier returns the total number of products for a specific supplier
+func (r *repo) GetTotalProductsBySupplier(ctx context.Context, supplierID int64) (int, error) {
+	builder := sq.
+		Select("COUNT(DISTINCT p." + pIdCol + ")").
+		From(productsTbl + " AS p").
+		Join(productsSupplierTbl + " AS ps ON ps." + psProductIDCol + " = p." + pIdCol).
+		Where(sq.Eq{"ps." + psSupplierIDCol: supplierID}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return 0, fmt.Errorf("failed to build get total products by supplier query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetTotalProductsBySupplier",
+		QueryRaw: query,
+	}
+
+	var total int
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("failed to get total products by supplier: %w", err)
+	}
+
+	return total, nil
+}

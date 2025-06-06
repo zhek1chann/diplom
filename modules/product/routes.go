@@ -6,16 +6,20 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// RegisterRoutes registers public routes that don't require authentication
 func RegisterRoutes(router *gin.RouterGroup, h *handler.CatalogHandler) {
 	catalogRoutes := router.Group("product")
 	{
 		catalogRoutes.GET("/list", h.GetProductList)
-
 		catalogRoutes.GET("/:id", h.GetProduct)
-
-		// catalogRoutes.GET("/product/pages", h.GetPageCount)
-
-		// catalogRoutes.POST("/product", h.AddProduct)
 	}
+}
 
+// RegisterSecureRoutes registers routes that require authentication
+func RegisterSecureRoutes(router *gin.RouterGroup, h *handler.CatalogHandler) {
+	catalogRoutes := router.Group("product")
+	{
+		catalogRoutes.POST("", h.AddProduct)
+		catalogRoutes.GET("/list/supplier", h.GetProductListBySupplier)
+	}
 }

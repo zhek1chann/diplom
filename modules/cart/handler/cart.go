@@ -6,7 +6,6 @@ import (
 	modelApi "diploma/modules/cart/handler/model"
 	"diploma/modules/cart/model"
 	contextkeys "diploma/pkg/context-keys"
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -40,7 +39,6 @@ func (h *CartHandler) AddProductToCard(c *gin.Context) {
 	}
 	input.CustomerID = claims.UserID
 
-	fmt.Println(input)
 	err := h.service.AddProductToCard(c.Request.Context(), converter.ToServiceCardInputFromAPI(&input))
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, modelApi.ErrorResponse{Err: err.Error()})
@@ -139,8 +137,6 @@ func (h *CartHandler) DeleteProductFromCart(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "product deleted from cart"})
 }
-
-
 
 // ClearCart godoc
 // @Summary      Clear cart

@@ -22,13 +22,15 @@ type DetailedProduct struct {
 }
 
 type Product struct {
-	ID             int64
-	GTIN           int64
-	Name           string
-	ImageUrl       string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	ID                    int64
+	GTIN                  int64
+	Name                  string
+	ImageUrl              string
+	CreatedAt             time.Time
+	UpdatedAt             time.Time
 	LowestProductSupplier ProductSupplier
+	Category              string
+	Subcategory           string
 }
 
 type ProductSupplier struct {
@@ -43,4 +45,10 @@ type Supplier struct {
 	OrderAmount        int
 	FreeDeliveryAmount int
 	DeliveryFee        int
+}
+
+type AddProductSupplier struct{
+	GTIN      string 
+	Price     float64
+	SupplierID int64 
 }

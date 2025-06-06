@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"os"
 )
 
@@ -46,7 +45,6 @@ func NewPaymentConfig() (PaymentConfig, error) {
 		return nil, errors.New("missing FONDY_CALLBACK_URL")
 	}
 
-	fmt.Println(checkoutURL)
 	return &paymentConfig{
 		checkoutURL:      checkoutURL,
 		merchantID:       merchantID,

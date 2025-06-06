@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"fmt"
 	"net/http"
 	"strconv"
 
@@ -28,7 +27,6 @@ func (h *CatalogHandler) GetProduct(c *gin.Context) {
 
 	// Convert limit and offset from string to int
 	productIdInt, err := strconv.ParseInt(productID, 10, 64)
-	fmt.Println(productIdInt)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid product ID"})
 		return
