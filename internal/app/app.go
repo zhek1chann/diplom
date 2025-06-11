@@ -119,6 +119,27 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 	productHandler := a.serviceProvider.ProductHandler(ctx)
 	product.RegisterRoutes(apiGroup, productHandler)
 
+	// Register category routes manually using GinHandler
+	categoryGinHandler := a.serviceProvider.CategoryGinHandler(ctx)
+	categoriesGroup := apiGroup.Group("/categories")
+	{
+		categoriesGroup.POST("", categoryGinHandler.CreateCategory)
+		categoriesGroup.GET("", categoryGinHandler.ListCategories)
+		categoriesGroup.GET("/tree", categoryGinHandler.GetCategoriesTree)
+		categoriesGroup.GET("/:categoryID", categoryGinHandler.GetCategory)
+		categoriesGroup.PUT("/:categoryID", categoryGinHandler.UpdateCategory)
+		categoriesGroup.DELETE("/:categoryID", categoryGinHandler.DeleteCategory)
+		categoriesGroup.GET("/:categoryID/subcategories", categoryGinHandler.ListSubcategories)
+		categoriesGroup.POST("/:categoryID/subcategories", categoryGinHandler.CreateSubcategory)
+	}
+
+	subcategoriesGroup := apiGroup.Group("/subcategories")
+	{
+		subcategoriesGroup.GET("/:subcategoryID", categoryGinHandler.GetSubcategory)
+		subcategoriesGroup.PUT("/:subcategoryID", categoryGinHandler.UpdateSubcategory)
+		subcategoriesGroup.DELETE("/:subcategoryID", categoryGinHandler.DeleteSubcategory)
+	}
+
 	cartCallbackHander := a.serviceProvider.CartHandler(ctx)
 	cart.RegisterRoutesCallback(apiGroup, cartCallbackHander)
 

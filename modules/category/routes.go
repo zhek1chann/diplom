@@ -4,14 +4,14 @@ import (
 	categoryHandler "diploma/modules/category/handler"
 	categoryRepo "diploma/modules/category/repository"
 	categorySvc "diploma/modules/category/service"
+	"diploma/pkg/client/db"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/jmoiron/sqlx"
 )
 
 // RegisterRoutes sets up all category routes
-func RegisterRoutes(r chi.Router, db *sqlx.DB) {
-	repo := categoryRepo.NewRepository(db)
+func RegisterRoutes(r chi.Router, dbClient db.Client) {
+	repo := categoryRepo.NewRepository(dbClient)
 	svc := categorySvc.NewService(repo)
 	h := categoryHandler.NewHandler(svc)
 

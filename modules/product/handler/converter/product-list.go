@@ -7,8 +7,10 @@ import (
 
 func ToServiceProductListQueryFromAPI(input *modelApi.ProductListInput) *model.ProductListQuery {
 	return &model.ProductListQuery{
-		Limit:     input.Limit,
-		Offset: input.Offset,
+		Limit:         input.Limit,
+		Offset:        input.Offset,
+		CategoryID:    input.CategoryID,
+		SubcategoryID: input.SubcategoryID,
 	}
 }
 

@@ -756,3 +756,135 @@ func (r *repo) FindOrCreateSubcategory(ctx context.Context, name string, categor
 	// Some other error occurred during find
 	return 0, fmt.Errorf("failed to find subcategory: %w", err)
 }
+
+// GetCategories retrieves all categories
+func (r *repo) GetCategories(ctx context.Context) ([]model.Category, error) {
+	builder := sq.
+		Select("id", "name", "description", "created_at", "updated_at").
+		From("categories").
+		OrderBy("name").
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build get categories query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetCategories",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get categories: %w", err)
+	}
+	defer rows.Close()
+
+	var categories []model.Category
+	for rows.Next() {
+		var category model.Category
+		err := rows.Scan(
+			&category.ID,
+			&category.Name,
+			&category.Description,
+			&category.CreatedAt,
+			&category.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan category: %w", err)
+		}
+		categories = append(categories, category)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating categories: %w", err)
+	}
+
+	return categories, nil
+}
+
+// GetCategory retrieves a single category by ID
+func (r *repo) GetCategory(ctx context.Context, id int) (*model.Category, error) {
+	builder := sq.
+		Select("id", "name", "description", "created_at", "updated_at").
+		From("categories").
+		Where(sq.Eq{"id": id}).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build get category query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetCategory",
+		QueryRaw: query,
+	}
+
+	var category model.Category
+	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(
+		&category.ID,
+		&category.Name,
+		&category.Description,
+		&category.CreatedAt,
+		&category.UpdatedAt,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, model.ErrNoRows
+		}
+		return nil, fmt.Errorf("failed to get category: %w", err)
+	}
+
+	return &category, nil
+}
+
+// GetSubcategories retrieves all subcategories for a specific category
+func (r *repo) GetSubcategories(ctx context.Context, categoryID int) ([]model.Subcategory, error) {
+	builder := sq.
+		Select("id", "category_id", "name", "description", "created_at", "updated_at").
+		From("subcategories").
+		Where(sq.Eq{"category_id": categoryID}).
+		OrderBy("name").
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build get subcategories query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetSubcategories",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get subcategories: %w", err)
+	}
+	defer rows.Close()
+
+	var subcategories []model.Subcategory
+	for rows.Next() {
+		var subcategory model.Subcategory
+		err := rows.Scan(
+			&subcategory.ID,
+			&subcategory.CategoryID,
+			&subcategory.Name,
+			&subcategory.Description,
+			&subcategory.CreatedAt,
+			&subcategory.UpdatedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan subcategory: %w", err)
+		}
+		subcategories = append(subcategories, subcategory)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating subcategories: %w", err)
+	}
+
+	return subcategories, nil
+}

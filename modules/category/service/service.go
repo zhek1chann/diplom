@@ -12,6 +12,7 @@ type Service interface {
 	DeleteCategory(ctx context.Context, id int) error
 	GetCategory(ctx context.Context, id int) (*model.Category, error)
 	ListCategories(ctx context.Context) ([]model.Category, error)
+	GetCategoriesTree(ctx context.Context) (*model.CategoriesTreeResponse, error)
 
 	CreateSubcategory(ctx context.Context, req model.CreateSubcategoryRequest) (*model.Subcategory, error)
 	UpdateSubcategory(ctx context.Context, id int, req model.UpdateSubcategoryRequest) (*model.Subcategory, error)
@@ -71,4 +72,16 @@ func (s *service) GetSubcategory(ctx context.Context, id int) (*model.Subcategor
 
 func (s *service) ListSubcategories(ctx context.Context, categoryID int) ([]model.Subcategory, error) {
 	return s.repo.ListSubcategories(ctx, categoryID)
+}
+
+func (s *service) GetCategoriesTree(ctx context.Context) (*model.CategoriesTreeResponse, error) {
+	categories, err := s.repo.GetCategoriesTree(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return &model.CategoriesTreeResponse{
+		Categories: categories,
+		Total:      len(categories),
+	}, nil
 }

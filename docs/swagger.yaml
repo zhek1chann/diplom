@@ -108,6 +108,103 @@ definitions:
       total_amount:
         type: integer
     type: object
+  diploma_modules_category_model.CategoriesTreeResponse:
+    properties:
+      categories:
+        items:
+          $ref: '#/definitions/diploma_modules_category_model.CategoryTree'
+        type: array
+      total:
+        type: integer
+    type: object
+  diploma_modules_category_model.Category:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  diploma_modules_category_model.CategoryTree:
+    properties:
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      subcategories:
+        items:
+          $ref: '#/definitions/diploma_modules_category_model.Subcategory'
+        type: array
+      updated_at:
+        type: string
+    type: object
+  diploma_modules_category_model.CreateCategoryRequest:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - name
+    type: object
+  diploma_modules_category_model.CreateSubcategoryRequest:
+    properties:
+      category_id:
+        type: integer
+      description:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    required:
+    - category_id
+    - name
+    type: object
+  diploma_modules_category_model.Subcategory:
+    properties:
+      category_id:
+        type: integer
+      created_at:
+        type: string
+      description:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  diploma_modules_category_model.UpdateCategoryRequest:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    type: object
+  diploma_modules_category_model.UpdateSubcategoryRequest:
+    properties:
+      description:
+        type: string
+      name:
+        maxLength: 100
+        minLength: 2
+        type: string
+    type: object
   diploma_modules_contract_handler_model.ContractResponse:
     properties:
       content:
@@ -648,6 +745,287 @@ paths:
       summary: Delete product from cart
       tags:
       - cart
+  /api/categories:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/diploma_modules_category_model.Category'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List all categories
+      tags:
+      - categories
+    post:
+      consumes:
+      - application/json
+      description: Create a new product category
+      parameters:
+      - description: Category data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/diploma_modules_category_model.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/diploma_modules_category_model.Category'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new category
+      tags:
+      - categories
+  /api/categories/{categoryID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a category by ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a category
+      tags:
+      - categories
+    get:
+      consumes:
+      - application/json
+      description: Get a category by ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_category_model.Category'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a category
+      tags:
+      - categories
+    put:
+      consumes:
+      - application/json
+      description: Update an existing category by ID
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryID
+        required: true
+        type: integer
+      - description: Updated category data
+        in: body
+        name: category
+        required: true
+        schema:
+          $ref: '#/definitions/diploma_modules_category_model.UpdateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_category_model.Category'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a category
+      tags:
+      - categories
+  /api/categories/{categoryID}/subcategories:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all subcategories for a specific category
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/diploma_modules_category_model.Subcategory'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: List subcategories
+      tags:
+      - subcategories
+    post:
+      consumes:
+      - application/json
+      description: Create a new subcategory for a specific category
+      parameters:
+      - description: Category ID
+        in: path
+        name: categoryID
+        required: true
+        type: integer
+      - description: Subcategory data
+        in: body
+        name: subcategory
+        required: true
+        schema:
+          $ref: '#/definitions/diploma_modules_category_model.CreateSubcategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/diploma_modules_category_model.Subcategory'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new subcategory
+      tags:
+      - subcategories
+  /api/categories/tree:
+    get:
+      consumes:
+      - application/json
+      description: Get a hierarchical tree of all categories with their subcategories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_category_model.CategoriesTreeResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get categories tree
+      tags:
+      - categories
   /api/contract:
     get:
       responses:
@@ -982,12 +1360,54 @@ paths:
       summary: Get price analytics for a product
       tags:
       - product
+  /api/product/category/{category_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all products in a specific category with optional subcategory
+        filtering
+      parameters:
+      - description: Category ID
+        in: path
+        name: category_id
+        required: true
+        type: integer
+      - description: Filter by subcategory ID (optional)
+        in: query
+        name: subcategory_id
+        type: integer
+      - description: Limit number of products (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset for pagination (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ProductListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ErrorResponse'
+      summary: Get products by category
+      tags:
+      - product
   /api/product/list:
     get:
       consumes:
       - application/json
-      description: Retrieve a list of products with pagination support using limit
-        and offset
+      description: Retrieve a list of products with pagination support and optional
+        category filtering
       parameters:
       - description: Limit number of products
         in: query
@@ -996,6 +1416,14 @@ paths:
       - description: Offset for pagination
         in: query
         name: offset
+        type: integer
+      - description: Filter by category ID
+        in: query
+        name: category_id
+        type: integer
+      - description: Filter by subcategory ID
+        in: query
+        name: subcategory_id
         type: integer
       produces:
       - application/json
@@ -1074,6 +1502,162 @@ paths:
       summary: Get market analytics
       tags:
       - product
+  /api/product/subcategory/{subcategory_id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve all products in a specific subcategory
+      parameters:
+      - description: Subcategory ID
+        in: path
+        name: subcategory_id
+        required: true
+        type: integer
+      - description: Limit number of products (default 20)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset for pagination (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ProductListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ErrorResponse'
+      summary: Get products by subcategory
+      tags:
+      - product
+  /api/subcategories/{subcategoryID}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete a subcategory by ID
+      parameters:
+      - description: Subcategory ID
+        in: path
+        name: subcategoryID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete a subcategory
+      tags:
+      - subcategories
+    get:
+      consumes:
+      - application/json
+      description: Get a subcategory by ID
+      parameters:
+      - description: Subcategory ID
+        in: path
+        name: subcategoryID
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_category_model.Subcategory'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get a subcategory
+      tags:
+      - subcategories
+    put:
+      consumes:
+      - application/json
+      description: Update an existing subcategory by ID
+      parameters:
+      - description: Subcategory ID
+        in: path
+        name: subcategoryID
+        required: true
+        type: integer
+      - description: Updated subcategory data
+        in: body
+        name: subcategory
+        required: true
+        schema:
+          $ref: '#/definitions/diploma_modules_category_model.UpdateSubcategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_category_model.Subcategory'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update a subcategory
+      tags:
+      - subcategories
   /api/user/address:
     get:
       description: Retrieve address list for a user

@@ -22,6 +22,10 @@ import (
 	productRepository "diploma/modules/product/repository/product"
 	productService "diploma/modules/product/service"
 
+	categoryApi "diploma/modules/category/handler"
+	categoryRepository "diploma/modules/category/repository"
+	categoryService "diploma/modules/category/service"
+
 	cartOrderClient "diploma/modules/cart/client/order"
 	cartPaymentClient "diploma/modules/cart/client/payment"
 	cartSupplierClient "diploma/modules/cart/client/supplier"
@@ -74,10 +78,15 @@ type serviceProvider struct {
 	authMiddlware  *authMiddlware.AuthMiddleware
 
 	// product
-
 	productRepository productService.IProductRepository
 	productService    *productService.ProductService
 	productHanlder    *productApi.CatalogHandler
+
+	// category
+	categoryRepository categoryRepository.Repository
+	categoryService    categoryService.Service
+	categoryHandler    *categoryApi.Handler
+	categoryGinHandler *categoryApi.GinHandler
 
 	// cart
 	cartSupplierClient cartService.ISupplierClient
@@ -325,6 +334,40 @@ func (s *serviceProvider) ProductHandler(ctx context.Context) *productApi.Catalo
 	}
 
 	return s.productHanlder
+}
+
+// ========= category =========
+
+func (s *serviceProvider) CategoryRepo(ctx context.Context) categoryRepository.Repository {
+	if s.categoryRepository == nil {
+		s.categoryRepository = categoryRepository.NewRepository(s.DBClient(ctx))
+	}
+
+	return s.categoryRepository
+}
+
+func (s *serviceProvider) CategoryService(ctx context.Context) categoryService.Service {
+	if s.categoryService == nil {
+		s.categoryService = categoryService.NewService(s.CategoryRepo(ctx))
+	}
+
+	return s.categoryService
+}
+
+func (s *serviceProvider) CategoryHandler(ctx context.Context) *categoryApi.Handler {
+	if s.categoryHandler == nil {
+		s.categoryHandler = categoryApi.NewHandler(s.CategoryService(ctx))
+	}
+
+	return s.categoryHandler
+}
+
+func (s *serviceProvider) CategoryGinHandler(ctx context.Context) *categoryApi.GinHandler {
+	if s.categoryGinHandler == nil {
+		s.categoryGinHandler = categoryApi.NewGinHandler(s.CategoryService(ctx))
+	}
+
+	return s.categoryGinHandler
 }
 
 // ========= suppliers =========

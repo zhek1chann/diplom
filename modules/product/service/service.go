@@ -45,4 +45,9 @@ type IProductRepository interface {
 	// Category management
 	FindOrCreateCategory(ctx context.Context, name string) (int, error)
 	FindOrCreateSubcategory(ctx context.Context, name string, categoryID int) (int, error)
+
+	// Category retrieval
+	GetCategories(ctx context.Context) ([]model.Category, error)
+	GetCategory(ctx context.Context, id int) (*model.Category, error)
+	GetSubcategories(ctx context.Context, categoryID int) ([]model.Subcategory, error)
 }
