@@ -1,0 +1,482 @@
+[
+    {
+        "id": 1,
+        "product_id": 1,
+        "supplier_id": 1,
+        "price": 1200,
+        "date": "2024-01-15T10:00:00Z",
+        "change_reason": "seasonal_adjustment"
+    },
+    {
+        "id": 2,
+        "product_id": 1,
+        "supplier_id": 1,
+        "price": 1150,
+        "date": "2024-02-01T10:00:00Z",
+        "change_reason": "promotion"
+    },
+    {
+        "id": 3,
+        "product_id": 1,
+        "supplier_id": 1,
+        "price": 1181,
+        "date": "2024-02-15T10:00:00Z",
+        "change_reason": "market_conditions"
+    },
+    {
+        "id": 4,
+        "product_id": 2,
+        "supplier_id": 2,
+        "price": 980,
+        "date": "2024-01-10T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 5,
+        "product_id": 2,
+        "supplier_id": 2,
+        "price": 1020,
+        "date": "2024-01-25T10:00:00Z",
+        "change_reason": "cost_increase"
+    },
+    {
+        "id": 6,
+        "product_id": 2,
+        "supplier_id": 2,
+        "price": 1049,
+        "date": "2024-02-10T10:00:00Z",
+        "change_reason": "inflation"
+    },
+    {
+        "id": 7,
+        "product_id": 3,
+        "supplier_id": 1,
+        "price": 3200,
+        "date": "2024-01-05T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 8,
+        "product_id": 3,
+        "supplier_id": 1,
+        "price": 3450,
+        "date": "2024-01-20T10:00:00Z",
+        "change_reason": "demand_spike"
+    },
+    {
+        "id": 9,
+        "product_id": 3,
+        "supplier_id": 1,
+        "price": 3380,
+        "date": "2024-02-05T10:00:00Z",
+        "change_reason": "stabilization"
+    },
+    {
+        "id": 10,
+        "product_id": 4,
+        "supplier_id": 3,
+        "price": 4500,
+        "date": "2024-01-08T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 11,
+        "product_id": 4,
+        "supplier_id": 3,
+        "price": 4750,
+        "date": "2024-01-22T10:00:00Z",
+        "change_reason": "currency_fluctuation"
+    },
+    {
+        "id": 12,
+        "product_id": 4,
+        "supplier_id": 3,
+        "price": 4841,
+        "date": "2024-02-08T10:00:00Z",
+        "change_reason": "market_adjustment"
+    },
+    {
+        "id": 13,
+        "product_id": 5,
+        "supplier_id": 4,
+        "price": 3300,
+        "date": "2024-01-12T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 14,
+        "product_id": 5,
+        "supplier_id": 4,
+        "price": 3550,
+        "date": "2024-01-28T10:00:00Z",
+        "change_reason": "supply_shortage"
+    },
+    {
+        "id": 15,
+        "product_id": 5,
+        "supplier_id": 4,
+        "price": 3495,
+        "date": "2024-02-12T10:00:00Z",
+        "change_reason": "competition"
+    },
+    {
+        "id": 16,
+        "product_id": 6,
+        "supplier_id": 5,
+        "price": 1380,
+        "date": "2024-01-18T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 17,
+        "product_id": 6,
+        "supplier_id": 5,
+        "price": 1420,
+        "date": "2024-02-02T10:00:00Z",
+        "change_reason": "raw_material_cost"
+    },
+    {
+        "id": 18,
+        "product_id": 6,
+        "supplier_id": 5,
+        "price": 1440,
+        "date": "2024-02-18T10:00:00Z",
+        "change_reason": "final_adjustment"
+    },
+    {
+        "id": 19,
+        "product_id": 7,
+        "supplier_id": 6,
+        "price": 2800,
+        "date": "2024-01-14T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 20,
+        "product_id": 7,
+        "supplier_id": 6,
+        "price": 3100,
+        "date": "2024-01-30T10:00:00Z",
+        "change_reason": "seasonal_demand"
+    },
+    {
+        "id": 21,
+        "product_id": 7,
+        "supplier_id": 6,
+        "price": 2996,
+        "date": "2024-02-14T10:00:00Z",
+        "change_reason": "price_optimization"
+    },
+    {
+        "id": 22,
+        "product_id": 8,
+        "supplier_id": 7,
+        "price": 3100,
+        "date": "2024-01-16T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 23,
+        "product_id": 8,
+        "supplier_id": 7,
+        "price": 3200,
+        "date": "2024-02-01T10:00:00Z",
+        "change_reason": "ingredient_cost"
+    },
+    {
+        "id": 24,
+        "product_id": 8,
+        "supplier_id": 7,
+        "price": 3258,
+        "date": "2024-02-16T10:00:00Z",
+        "change_reason": "market_positioning"
+    },
+    {
+        "id": 25,
+        "product_id": 9,
+        "supplier_id": 8,
+        "price": 1350,
+        "date": "2024-01-11T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 26,
+        "product_id": 9,
+        "supplier_id": 8,
+        "price": 1420,
+        "date": "2024-01-26T10:00:00Z",
+        "change_reason": "production_cost"
+    },
+    {
+        "id": 27,
+        "product_id": 9,
+        "supplier_id": 8,
+        "price": 1439,
+        "date": "2024-02-11T10:00:00Z",
+        "change_reason": "transport_cost"
+    },
+    {
+        "id": 28,
+        "product_id": 10,
+        "supplier_id": 9,
+        "price": 1750,
+        "date": "2024-01-13T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 29,
+        "product_id": 10,
+        "supplier_id": 9,
+        "price": 1850,
+        "date": "2024-01-29T10:00:00Z",
+        "change_reason": "premium_positioning"
+    },
+    {
+        "id": 30,
+        "product_id": 10,
+        "supplier_id": 9,
+        "price": 1878,
+        "date": "2024-02-13T10:00:00Z",
+        "change_reason": "final_price"
+    },
+    {
+        "id": 31,
+        "product_id": 11,
+        "supplier_id": 8,
+        "price": 3700,
+        "date": "2024-01-17T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 32,
+        "product_id": 11,
+        "supplier_id": 8,
+        "price": 3850,
+        "date": "2024-02-03T10:00:00Z",
+        "change_reason": "quality_upgrade"
+    },
+    {
+        "id": 33,
+        "product_id": 11,
+        "supplier_id": 8,
+        "price": 3921,
+        "date": "2024-02-17T10:00:00Z",
+        "change_reason": "market_adjustment"
+    },
+    {
+        "id": 34,
+        "product_id": 12,
+        "supplier_id": 10,
+        "price": 2200,
+        "date": "2024-01-19T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 35,
+        "product_id": 12,
+        "supplier_id": 10,
+        "price": 2280,
+        "date": "2024-02-04T10:00:00Z",
+        "change_reason": "flour_cost_increase"
+    },
+    {
+        "id": 36,
+        "product_id": 12,
+        "supplier_id": 10,
+        "price": 2343,
+        "date": "2024-02-19T10:00:00Z",
+        "change_reason": "energy_cost"
+    },
+    {
+        "id": 37,
+        "product_id": 13,
+        "supplier_id": 2,
+        "price": 1000,
+        "date": "2024-01-21T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 38,
+        "product_id": 13,
+        "supplier_id": 2,
+        "price": 1080,
+        "date": "2024-02-06T10:00:00Z",
+        "change_reason": "cocoa_price_surge"
+    },
+    {
+        "id": 39,
+        "product_id": 13,
+        "supplier_id": 2,
+        "price": 1107,
+        "date": "2024-02-20T10:00:00Z",
+        "change_reason": "packaging_cost"
+    },
+    {
+        "id": 40,
+        "product_id": 14,
+        "supplier_id": 11,
+        "price": 2200,
+        "date": "2024-01-23T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 41,
+        "product_id": 14,
+        "supplier_id": 11,
+        "price": 2320,
+        "date": "2024-02-07T10:00:00Z",
+        "change_reason": "organic_certification"
+    },
+    {
+        "id": 42,
+        "product_id": 14,
+        "supplier_id": 11,
+        "price": 2368,
+        "date": "2024-02-21T10:00:00Z",
+        "change_reason": "premium_brand"
+    },
+    {
+        "id": 43,
+        "product_id": 15,
+        "supplier_id": 12,
+        "price": 1350,
+        "date": "2024-01-25T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 44,
+        "product_id": 15,
+        "supplier_id": 12,
+        "price": 1450,
+        "date": "2024-02-09T10:00:00Z",
+        "change_reason": "fishing_season"
+    },
+    {
+        "id": 45,
+        "product_id": 15,
+        "supplier_id": 12,
+        "price": 1486,
+        "date": "2024-02-22T10:00:00Z",
+        "change_reason": "cold_storage_cost"
+    },
+    {
+        "id": 46,
+        "product_id": 16,
+        "supplier_id": 2,
+        "price": 1150,
+        "date": "2024-01-27T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 47,
+        "product_id": 16,
+        "supplier_id": 2,
+        "price": 1180,
+        "date": "2024-02-11T10:00:00Z",
+        "change_reason": "sugar_price_increase"
+    },
+    {
+        "id": 48,
+        "product_id": 16,
+        "supplier_id": 2,
+        "price": 1212,
+        "date": "2024-02-23T10:00:00Z",
+        "change_reason": "labor_cost"
+    },
+    {
+        "id": 49,
+        "product_id": 17,
+        "supplier_id": 13,
+        "price": 2980,
+        "date": "2024-01-29T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 50,
+        "product_id": 17,
+        "supplier_id": 13,
+        "price": 3080,
+        "date": "2024-02-12T10:00:00Z",
+        "change_reason": "chocolate_quality"
+    },
+    {
+        "id": 51,
+        "product_id": 17,
+        "supplier_id": 13,
+        "price": 3152,
+        "date": "2024-02-24T10:00:00Z",
+        "change_reason": "artisan_crafting"
+    },
+    {
+        "id": 52,
+        "product_id": 18,
+        "supplier_id": 13,
+        "price": 4200,
+        "date": "2024-01-31T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 53,
+        "product_id": 18,
+        "supplier_id": 13,
+        "price": 4350,
+        "date": "2024-02-14T10:00:00Z",
+        "change_reason": "coconut_shortage"
+    },
+    {
+        "id": 54,
+        "product_id": 18,
+        "supplier_id": 13,
+        "price": 4398,
+        "date": "2024-02-25T10:00:00Z",
+        "change_reason": "import_duties"
+    },
+    {
+        "id": 55,
+        "product_id": 19,
+        "supplier_id": 13,
+        "price": 1600,
+        "date": "2024-02-01T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 56,
+        "product_id": 19,
+        "supplier_id": 13,
+        "price": 1680,
+        "date": "2024-02-15T10:00:00Z",
+        "change_reason": "vanilla_extract_cost"
+    },
+    {
+        "id": 57,
+        "product_id": 19,
+        "supplier_id": 13,
+        "price": 1702,
+        "date": "2024-02-26T10:00:00Z",
+        "change_reason": "recipe_improvement"
+    },
+    {
+        "id": 58,
+        "product_id": 20,
+        "supplier_id": 14,
+        "price": 2300,
+        "date": "2024-02-02T10:00:00Z",
+        "change_reason": "initial_price"
+    },
+    {
+        "id": 59,
+        "product_id": 20,
+        "supplier_id": 14,
+        "price": 2380,
+        "date": "2024-02-16T10:00:00Z",
+        "change_reason": "dairy_alternative_demand"
+    },
+    {
+        "id": 60,
+        "product_id": 20,
+        "supplier_id": 14,
+        "price": 2416,
+        "date": "2024-02-27T10:00:00Z",
+        "change_reason": "vegan_certification"
+    }
+] 

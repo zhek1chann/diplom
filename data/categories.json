@@ -1,0 +1,153 @@
+[
+    {
+        "id": 1,
+        "name": "Молочные продукты",
+        "description": "Молоко, сыры, йогурты, кефир, творог и другие молочные изделия",
+        "subcategories": [
+            {"id": 1, "name": "Молоко", "category_id": 1},
+            {"id": 2, "name": "Сыры", "category_id": 1},
+            {"id": 3, "name": "Кисломолочные продукты", "category_id": 1},
+            {"id": 4, "name": "Творог и творожные изделия", "category_id": 1},
+            {"id": 5, "name": "Сливочное масло", "category_id": 1}
+        ]
+    },
+    {
+        "id": 2,
+        "name": "Мясные продукты",
+        "description": "Свежее мясо, колбасы, деликатесы, полуфабрикаты",
+        "subcategories": [
+            {"id": 6, "name": "Говядина", "category_id": 2},
+            {"id": 7, "name": "Свинина", "category_id": 2},
+            {"id": 8, "name": "Баранина", "category_id": 2},
+            {"id": 9, "name": "Птица", "category_id": 2},
+            {"id": 10, "name": "Колбасные изделия", "category_id": 2},
+            {"id": 11, "name": "Полуфабрикаты", "category_id": 2}
+        ]
+    },
+    {
+        "id": 3,
+        "name": "Рыба и морепродукты",
+        "description": "Свежая и замороженная рыба, морепродукты, консервы",
+        "subcategories": [
+            {"id": 12, "name": "Свежая рыба", "category_id": 3},
+            {"id": 13, "name": "Замороженная рыба", "category_id": 3},
+            {"id": 14, "name": "Морепродукты", "category_id": 3},
+            {"id": 15, "name": "Рыбные консервы", "category_id": 3}
+        ]
+    },
+    {
+        "id": 4,
+        "name": "Хлебобулочные изделия",
+        "description": "Хлеб, булочки, пирожные, торты",
+        "subcategories": [
+            {"id": 16, "name": "Хлеб", "category_id": 4},
+            {"id": 17, "name": "Булочки и багеты", "category_id": 4},
+            {"id": 18, "name": "Пирожные", "category_id": 4},
+            {"id": 19, "name": "Торты", "category_id": 4},
+            {"id": 20, "name": "Печенье и вафли", "category_id": 4}
+        ]
+    },
+    {
+        "id": 5,
+        "name": "Овощи и фрукты",
+        "description": "Свежие и замороженные овощи, фрукты, ягоды",
+        "subcategories": [
+            {"id": 21, "name": "Свежие овощи", "category_id": 5},
+            {"id": 22, "name": "Замороженные овощи", "category_id": 5},
+            {"id": 23, "name": "Свежие фрукты", "category_id": 5},
+            {"id": 24, "name": "Ягоды", "category_id": 5},
+            {"id": 25, "name": "Экзотические фрукты", "category_id": 5}
+        ]
+    },
+    {
+        "id": 6,
+        "name": "Крупы и макаронные изделия",
+        "description": "Крупы, каши, макароны, мука",
+        "subcategories": [
+            {"id": 26, "name": "Крупы", "category_id": 6},
+            {"id": 27, "name": "Макаронные изделия", "category_id": 6},
+            {"id": 28, "name": "Мука", "category_id": 6},
+            {"id": 29, "name": "Каши быстрого приготовления", "category_id": 6}
+        ]
+    },
+    {
+        "id": 7,
+        "name": "Масла и жиры",
+        "description": "Растительные и животные жиры, масла",
+        "subcategories": [
+            {"id": 30, "name": "Подсолнечное масло", "category_id": 7},
+            {"id": 31, "name": "Оливковое масло", "category_id": 7},
+            {"id": 32, "name": "Другие растительные масла", "category_id": 7},
+            {"id": 33, "name": "Маргарин", "category_id": 7}
+        ]
+    },
+    {
+        "id": 8,
+        "name": "Напитки",
+        "description": "Соки, газированные напитки, чай, кофе, алкоголь",
+        "subcategories": [
+            {"id": 34, "name": "Соки", "category_id": 8},
+            {"id": 35, "name": "Газированные напитки", "category_id": 8},
+            {"id": 36, "name": "Чай", "category_id": 8},
+            {"id": 37, "name": "Кофе", "category_id": 8},
+            {"id": 38, "name": "Минеральная вода", "category_id": 8},
+            {"id": 39, "name": "Энергетические напитки", "category_id": 8}
+        ]
+    },
+    {
+        "id": 9,
+        "name": "Кондитерские изделия",
+        "description": "Шоколад, конфеты, мармелад, зефир",
+        "subcategories": [
+            {"id": 40, "name": "Шоколад", "category_id": 9},
+            {"id": 41, "name": "Конфеты", "category_id": 9},
+            {"id": 42, "name": "Мармелад и желе", "category_id": 9},
+            {"id": 43, "name": "Зефир и пастила", "category_id": 9},
+            {"id": 44, "name": "Восточные сладости", "category_id": 9}
+        ]
+    },
+    {
+        "id": 10,
+        "name": "Консервы",
+        "description": "Мясные, овощные, рыбные консервы",
+        "subcategories": [
+            {"id": 45, "name": "Мясные консервы", "category_id": 10},
+            {"id": 46, "name": "Овощные консервы", "category_id": 10},
+            {"id": 47, "name": "Фруктовые консервы", "category_id": 10},
+            {"id": 48, "name": "Паштеты", "category_id": 10}
+        ]
+    },
+    {
+        "id": 11,
+        "name": "Бакалея",
+        "description": "Сахар, соль, специи, приправы",
+        "subcategories": [
+            {"id": 49, "name": "Сахар", "category_id": 11},
+            {"id": 50, "name": "Соль", "category_id": 11},
+            {"id": 51, "name": "Специи и приправы", "category_id": 11},
+            {"id": 52, "name": "Уксус", "category_id": 11},
+            {"id": 53, "name": "Соусы", "category_id": 11}
+        ]
+    },
+    {
+        "id": 12,
+        "name": "Замороженные продукты",
+        "description": "Замороженные полуфабрикаты, овощи, фрукты",
+        "subcategories": [
+            {"id": 54, "name": "Замороженные полуфабрикаты", "category_id": 12},
+            {"id": 55, "name": "Мороженое", "category_id": 12},
+            {"id": 56, "name": "Замороженные ягоды", "category_id": 12}
+        ]
+    },
+    {
+        "id": 13,
+        "name": "Диетические продукты",
+        "description": "Продукты для здорового питания, безглютеновые, низкобелковые",
+        "subcategories": [
+            {"id": 57, "name": "Безглютеновые продукты", "category_id": 13},
+            {"id": 58, "name": "Низкобелковые продукты", "category_id": 13},
+            {"id": 59, "name": "Продукты без сахара", "category_id": 13},
+            {"id": 60, "name": "Органические продукты", "category_id": 13}
+        ]
+    }
+] 

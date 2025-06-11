@@ -197,9 +197,28 @@ definitions:
     type: object
   diploma_modules_product_handler_model.AddProductRequest:
     properties:
+      category_id:
+        type: integer
       gtin:
         type: string
       price:
+        type: number
+      subcategory_id:
+        type: integer
+    type: object
+  diploma_modules_product_handler_model.CategoryAnalytics:
+    properties:
+      avg_price_change_percent:
+        type: number
+      category_name:
+        type: string
+      product_count:
+        type: integer
+      top_product:
+        type: string
+      top_product_price:
+        type: integer
+      volatility_percent:
         type: number
     type: object
   diploma_modules_product_handler_model.DetailedProduct:
@@ -214,6 +233,76 @@ definitions:
   diploma_modules_product_handler_model.ErrorResponse:
     properties:
       error:
+        type: string
+    type: object
+  diploma_modules_product_handler_model.MarketAnalyticsResponse:
+    properties:
+      avg_price_change_percent:
+        type: number
+      categories:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.CategoryAnalytics'
+        type: array
+      category:
+        type: string
+      market_volatility_percent:
+        type: number
+      period_days:
+        type: integer
+      top_gainers:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.ProductTrend'
+        type: array
+      top_losers:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.ProductTrend'
+        type: array
+      total_products:
+        type: integer
+      trend_data:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.MarketTrendItem'
+        type: array
+    type: object
+  diploma_modules_product_handler_model.MarketTrendItem:
+    properties:
+      date:
+        type: string
+      market_index:
+        type: number
+      volume:
+        type: integer
+    type: object
+  diploma_modules_product_handler_model.PriceAnalyticsResponse:
+    properties:
+      avg_price:
+        type: number
+      current_price:
+        type: integer
+      max_price:
+        type: integer
+      min_price:
+        type: integer
+      price_history:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.PriceHistoryItem'
+        type: array
+      product_id:
+        type: integer
+      product_name:
+        type: string
+      suppliers:
+        items:
+          $ref: '#/definitions/diploma_modules_product_handler_model.SupplierAnalytics'
+        type: array
+    type: object
+  diploma_modules_product_handler_model.PriceHistoryItem:
+    properties:
+      date:
+        type: string
+      price:
+        type: integer
+      supplier:
         type: string
     type: object
   diploma_modules_product_handler_model.Product:
@@ -256,6 +345,19 @@ definitions:
       supplier:
         $ref: '#/definitions/diploma_modules_product_handler_model.Supplier'
     type: object
+  diploma_modules_product_handler_model.ProductTrend:
+    properties:
+      current_price:
+        type: integer
+      price_change_percent:
+        type: number
+      product_id:
+        type: integer
+      product_name:
+        type: string
+      volume:
+        type: integer
+    type: object
   diploma_modules_product_handler_model.Supplier:
     properties:
       delivery_fee:
@@ -268,6 +370,23 @@ definitions:
         type: string
       order_amount:
         type: integer
+    type: object
+  diploma_modules_product_handler_model.SupplierAnalytics:
+    properties:
+      avg_price:
+        type: number
+      current_price:
+        type: integer
+      max_price:
+        type: integer
+      min_price:
+        type: integer
+      price_changes_count:
+        type: integer
+      supplier_id:
+        type: integer
+      supplier_name:
+        type: string
     type: object
   diploma_modules_user_handler_model.Address:
     properties:
@@ -833,6 +952,36 @@ paths:
       summary: Get product by ID
       tags:
       - product
+  /api/product/{id}/analytics:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve price history and analytics for a specific product (mock
+        data)
+      parameters:
+      - description: Product ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Number of days for history (default 30)
+        in: query
+        name: days
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.PriceAnalyticsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ErrorResponse'
+      summary: Get price analytics for a product
+      tags:
+      - product
   /api/product/list:
     get:
       consumes:
@@ -895,6 +1044,34 @@ paths:
       security:
       - ApiKeyAuth: []
       summary: Get product list by supplier
+      tags:
+      - product
+  /api/product/market/analytics:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve general market price trends and analytics (mock data)
+      parameters:
+      - description: Number of days for history (default 30)
+        in: query
+        name: days
+        type: integer
+      - description: Category filter
+        in: query
+        name: category
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.MarketAnalyticsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/diploma_modules_product_handler_model.ErrorResponse'
+      summary: Get market analytics
       tags:
       - product
   /api/user/address:

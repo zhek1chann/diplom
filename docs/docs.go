@@ -863,6 +863,49 @@ const docTemplate = `{
                 }
             }
         },
+        "/api/product/market/analytics": {
+            "get": {
+                "description": "Retrieve general market price trends and analytics (mock data)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "product"
+                ],
+                "summary": "Get market analytics",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Number of days for history (default 30)",
+                        "name": "days",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Category filter",
+                        "name": "category",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_product_handler_model.MarketAnalyticsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_product_handler_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/product/{id}": {
             "get": {
                 "description": "Retrieve product information by its ID",
@@ -900,6 +943,50 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_product_handler_model.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/product/{id}/analytics": {
+            "get": {
+                "description": "Retrieve price history and analytics for a specific product (mock data)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "product"
+                ],
+                "summary": "Get price analytics for a product",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Product ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of days for history (default 30)",
+                        "name": "days",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/diploma_modules_product_handler_model.PriceAnalyticsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "$ref": "#/definitions/diploma_modules_product_handler_model.ErrorResponse"
                         }
@@ -1415,10 +1502,39 @@ const docTemplate = `{
         "diploma_modules_product_handler_model.AddProductRequest": {
             "type": "object",
             "properties": {
+                "category_id": {
+                    "type": "integer"
+                },
                 "gtin": {
                     "type": "string"
                 },
                 "price": {
+                    "type": "number"
+                },
+                "subcategory_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.CategoryAnalytics": {
+            "type": "object",
+            "properties": {
+                "avg_price_change_percent": {
+                    "type": "number"
+                },
+                "category_name": {
+                    "type": "string"
+                },
+                "product_count": {
+                    "type": "integer"
+                },
+                "top_product": {
+                    "type": "string"
+                },
+                "top_product_price": {
+                    "type": "integer"
+                },
+                "volatility_percent": {
                     "type": "number"
                 }
             }
@@ -1441,6 +1557,113 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.MarketAnalyticsResponse": {
+            "type": "object",
+            "properties": {
+                "avg_price_change_percent": {
+                    "type": "number"
+                },
+                "categories": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.CategoryAnalytics"
+                    }
+                },
+                "category": {
+                    "type": "string"
+                },
+                "market_volatility_percent": {
+                    "type": "number"
+                },
+                "period_days": {
+                    "type": "integer"
+                },
+                "top_gainers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.ProductTrend"
+                    }
+                },
+                "top_losers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.ProductTrend"
+                    }
+                },
+                "total_products": {
+                    "type": "integer"
+                },
+                "trend_data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.MarketTrendItem"
+                    }
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.MarketTrendItem": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "market_index": {
+                    "type": "number"
+                },
+                "volume": {
+                    "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.PriceAnalyticsResponse": {
+            "type": "object",
+            "properties": {
+                "avg_price": {
+                    "type": "number"
+                },
+                "current_price": {
+                    "type": "integer"
+                },
+                "max_price": {
+                    "type": "integer"
+                },
+                "min_price": {
+                    "type": "integer"
+                },
+                "price_history": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.PriceHistoryItem"
+                    }
+                },
+                "product_id": {
+                    "type": "integer"
+                },
+                "product_name": {
+                    "type": "string"
+                },
+                "suppliers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/diploma_modules_product_handler_model.SupplierAnalytics"
+                    }
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.PriceHistoryItem": {
+            "type": "object",
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "price": {
+                    "type": "integer"
+                },
+                "supplier": {
                     "type": "string"
                 }
             }
@@ -1507,6 +1730,26 @@ const docTemplate = `{
                 }
             }
         },
+        "diploma_modules_product_handler_model.ProductTrend": {
+            "type": "object",
+            "properties": {
+                "current_price": {
+                    "type": "integer"
+                },
+                "price_change_percent": {
+                    "type": "number"
+                },
+                "product_id": {
+                    "type": "integer"
+                },
+                "product_name": {
+                    "type": "string"
+                },
+                "volume": {
+                    "type": "integer"
+                }
+            }
+        },
         "diploma_modules_product_handler_model.Supplier": {
             "type": "object",
             "properties": {
@@ -1524,6 +1767,32 @@ const docTemplate = `{
                 },
                 "order_amount": {
                     "type": "integer"
+                }
+            }
+        },
+        "diploma_modules_product_handler_model.SupplierAnalytics": {
+            "type": "object",
+            "properties": {
+                "avg_price": {
+                    "type": "number"
+                },
+                "current_price": {
+                    "type": "integer"
+                },
+                "max_price": {
+                    "type": "integer"
+                },
+                "min_price": {
+                    "type": "integer"
+                },
+                "price_changes_count": {
+                    "type": "integer"
+                },
+                "supplier_id": {
+                    "type": "integer"
+                },
+                "supplier_name": {
+                    "type": "string"
                 }
             }
         },

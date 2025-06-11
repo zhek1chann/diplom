@@ -1,0 +1,248 @@
+package main
+
+import (
+	"encoding/json"
+	"fmt"
+	"math/rand"
+	"os"
+	"time"
+)
+
+type Product struct {
+	ID                int    `json:"id"`
+	Name              string `json:"name"`
+	ImageURL          string `json:"image_url"`
+	GTIN              string `json:"gtin"`
+	MinPrice          int    `json:"min_price"`
+	CategoryID        int    `json:"category_id"`
+	SubcategoryID     int    `json:"subcategory_id"`
+	Brand             string `json:"brand"`
+	Weight            string `json:"weight"`
+	CountryOrigin     string `json:"country_origin"`
+	ShelfLifeDays     int    `json:"shelf_life_days"`
+	StorageConditions string `json:"storage_conditions"`
+	CreatedAt         string `json:"created_at"`
+	UpdatedAt         string `json:"updated_at"`
+	SupplierID        int    `json:"supplier_id"`
+}
+
+type PriceHistory struct {
+	ID           int    `json:"id"`
+	ProductID    int    `json:"product_id"`
+	SupplierID   int    `json:"supplier_id"`
+	Price        int    `json:"price"`
+	Date         string `json:"date"`
+	ChangeReason string `json:"change_reason"`
+}
+
+type Supplier struct {
+	UserID      int    `json:"user_id"`
+	Name        string `json:"name"`
+	ConditionID int    `json:"condition_id"`
+	Email       string `json:"email,omitempty"`
+	Phone       string `json:"phone,omitempty"`
+	Address     string `json:"address,omitempty"`
+	TIN         string `json:"tin,omitempty"` // Налоговый номер
+}
+
+func main() {
+	rand.Seed(time.Now().UnixNano())
+
+	// Генерируем дополнительные продукты
+	products := generateExtendedProducts()
+	writeJSONFile("extended_products.json", products)
+
+	// Генерируем расширенную историю цен
+	priceHistory := generateExtendedPriceHistory()
+	writeJSONFile("extended_price_history.json", priceHistory)
+
+	// Генерируем расширенных поставщиков
+	suppliers := generateExtendedSuppliers()
+	writeJSONFile("extended_suppliers.json", suppliers)
+
+	fmt.Println("✅ Успешно сгенерированы расширенные данные:")
+	fmt.Println("   - extended_products.json")
+	fmt.Println("   - extended_price_history.json")
+	fmt.Println("   - extended_suppliers.json")
+}
+
+func generateExtendedProducts() []Product {
+	products := []Product{}
+
+	productTemplates := []struct {
+		name       string
+		categoryID int
+		subcatID   int
+		brand      string
+		weight     string
+		country    string
+		shelfLife  int
+		storage    string
+	}{
+		{"Молоко пастеризованное 3.2%", 1, 1, "Пискаревский", "900 мл", "Казахстан", 7, "Холодильник +2°C до +6°C"},
+		{"Хлеб белый нарезной", 4, 16, "Дарницкий", "700 г", "Казахстан", 3, "Прохладное сухое место"},
+		{"Масло подсолнечное рафинированное", 7, 30, "Злато", "1 л", "Казахстан", 365, "Прохладное темное место"},
+		{"Сахар-песок белый", 11, 49, "Қант", "1 кг", "Казахстан", 730, "Сухое место"},
+		{"Мука пшеничная высший сорт", 6, 28, "Алматы-Нан", "2 кг", "Казахстан", 365, "Сухое прохладное место"},
+		{"Рис круглозерный шлифованный", 6, 26, "Sulu", "1 кг", "Казахстан", 730, "Сухое место"},
+		{"Гречка ядрица отборная", 6, 26, "Русское поле", "800 г", "Россия", 730, "Сухое место"},
+		{"Макароны спагетти", 6, 27, "Barilla", "500 г", "Италия", 1095, "Сухое место"},
+		{"Колбаса вареная Докторская", 2, 10, "Мясокомбинат", "400 г", "Казахстан", 15, "Холодильник +2°C до +6°C"},
+		{"Сыр твердый Российский 45%", 1, 2, "Милком", "200 г", "Казахстан", 60, "Холодильник +2°C до +6°C"},
+		{"Картофель свежий", 5, 21, "Фермер KZ", "2 кг", "Казахстан", 30, "Прохладное темное место"},
+		{"Морковь свежая", 5, 21, "Агро-Алматы", "1 кг", "Казахстан", 21, "Холодильник +2°C до +6°C"},
+		{"Лук репчатый", 5, 21, "Овощи КZ", "2 кг", "Казахстан", 90, "Прохладное сухое место"},
+		{"Яблоки Алматинские", 5, 23, "Сады Алматы", "1 кг", "Казахстан", 14, "Холодильник +2°C до +6°C"},
+		{"Бананы", 5, 25, "Tropical", "1 кг", "Эквадор", 7, "Комнатная температура"},
+		{"Куриное филе охлажденное", 2, 9, "Агрофирма", "1 кг", "Казахстан", 5, "Холодильник +2°C до +6°C"},
+		{"Говядина (лопатка)", 2, 6, "Мясная лавка", "1 кг", "Казахстан", 3, "Холодильник +2°C до +6°C"},
+		{"Рыба форель охлажденная", 3, 12, "Fish Market", "1 кг", "Казахстан", 2, "Холодильник 0°C до +2°C"},
+		{"Творог 9%", 1, 4, "Молочная долина", "250 г", "Казахстан", 5, "Холодильник +2°C до +6°C"},
+		{"Кефир 2.5%", 1, 3, "BioFood", "500 мл", "Казахстан", 7, "Холодильник +2°C до +6°C"},
+		{"Йогурт натуральный", 1, 3, "Греческий", "400 г", "Казахстан", 14, "Холодильник +2°C до +6°C"},
+		{"Масло сливочное 82.5%", 1, 5, "Крестьянское", "200 г", "Казахстан", 30, "Холодильник +2°C до +6°C"},
+		{"Яйца куриные С1", 2, 9, "Птицефабрика", "10 шт", "Казахстан", 25, "Холодильник +2°C до +6°C"},
+		{"Чай черный байховый", 8, 36, "Акkу", "100 г", "Казахстан", 730, "Сухое место"},
+		{"Кофе растворимый", 8, 37, "Nescafe", "190 г", "Швейцария", 1095, "Сухое прохладное место"},
+		{"Соль поваренная", 11, 50, "Аралтуз", "1 кг", "Казахстан", 1825, "Сухое место"},
+		{"Перец черный молотый", 11, 51, "Kotanyi", "20 г", "Австрия", 730, "Сухое место"},
+		{"Уксус столовый 9%", 11, 52, "Золотая капля", "500 мл", "Казахстан", 1095, "Прохладное место"},
+		{"Майонез Провансаль", 11, 53, "Calve", "400 г", "Казахстан", 120, "Холодильник +2°C до +6°C"},
+		{"Кетчуп томатный", 11, 53, "Heinz", "350 г", "Казахстан", 365, "Прохладное место"},
+	}
+
+	for i, template := range productTemplates {
+		basePrice := 200 + rand.Intn(5000)
+
+		product := Product{
+			ID:                i + 21, // Начинаем с 21, так как у нас уже есть 20
+			Name:              template.name,
+			ImageURL:          fmt.Sprintf("https://example.com/images/product_%d.jpg", i+21),
+			GTIN:              fmt.Sprintf("287000%07d", 8118200+i),
+			MinPrice:          basePrice,
+			CategoryID:        template.categoryID,
+			SubcategoryID:     template.subcatID,
+			Brand:             template.brand,
+			Weight:            template.weight,
+			CountryOrigin:     template.country,
+			ShelfLifeDays:     template.shelfLife,
+			StorageConditions: template.storage,
+			CreatedAt:         randomDate(90),
+			UpdatedAt:         randomDate(30),
+			SupplierID:        rand.Intn(20) + 1,
+		}
+
+		products = append(products, product)
+	}
+
+	return products
+}
+
+func generateExtendedPriceHistory() []PriceHistory {
+	history := []PriceHistory{}
+	id := 1
+
+	// Генерируем историю для продуктов с ID от 1 до 50
+	for productID := 1; productID <= 50; productID++ {
+		for supplierID := 1; supplierID <= 5; supplierID++ { // Каждый товар у 5 поставщиков
+			basePrice := 500 + rand.Intn(4000)
+
+			// Генерируем 5-15 изменений цены за последние 365 дней
+			changes := 5 + rand.Intn(10)
+			for j := 0; j < changes; j++ {
+				daysAgo := rand.Intn(365)
+				price := basePrice + rand.Intn(1000) - 500 // ±500 от базовой цены
+
+				reasons := []string{
+					"market_adjustment", "seasonal_change", "cost_increase",
+					"promotion", "competition", "supply_change", "demand_spike",
+					"inflation", "currency_fluctuation", "quality_upgrade",
+				}
+
+				priceEntry := PriceHistory{
+					ID:           id,
+					ProductID:    productID,
+					SupplierID:   supplierID,
+					Price:        price,
+					Date:         randomDate(daysAgo),
+					ChangeReason: reasons[rand.Intn(len(reasons))],
+				}
+
+				history = append(history, priceEntry)
+				id++
+			}
+		}
+	}
+
+	return history
+}
+
+func generateExtendedSuppliers() []Supplier {
+	suppliers := []Supplier{}
+
+	supplierNames := []string{
+		"ТОО \"Алматы Продукт\"", "ОАО \"Караганда Снаб\"", "ИП Петров И.И.",
+		"ТОО \"Астана Дистрибьюшн\"", "ООО \"Казахстан-Фуд\"", "АО \"Нур-Султан Трейд\"",
+		"ТОО \"Шымкент Опт\"", "ИП Сидоров А.А.", "ООО \"Актобе-Агро\"",
+		"ТОО \"Костанай Зерно\"", "АО \"Павлодар Молоко\"", "ООО \"Тараз-Мясо\"",
+		"ТОО \"Усть-Каменогорск Рыба\"", "ИП Иванов С.С.", "АО \"Атырау-Нефтехим\"",
+		"ТОО \"Кызылорда Рис\"", "ООО \"Актау Морепродукты\"", "ИП Смирнов Д.Д.",
+		"ТОО \"Туркестан Фрукты\"", "АО \"Жезказган Металл\"",
+	}
+
+	for i, name := range supplierNames {
+		supplier := Supplier{
+			UserID:      i + 21, // Начинаем с 21
+			Name:        name,
+			ConditionID: (i % 5) + 1, // Циклично распределяем условия доставки
+			Email:       fmt.Sprintf("supplier%d@example.kz", i+21),
+			Phone:       fmt.Sprintf("+7 701 %03d %02d %02d", rand.Intn(1000), rand.Intn(100), rand.Intn(100)),
+			Address:     generateKazakhAddress(),
+			TIN:         fmt.Sprintf("KZ%012d", 100000000000+rand.Intn(900000000000)),
+		}
+		suppliers = append(suppliers, supplier)
+	}
+
+	return suppliers
+}
+
+func generateKazakhAddress() string {
+	cities := []string{
+		"Алматы", "Нур-Султан", "Шымкент", "Караганда", "Актобе",
+		"Тараз", "Павлодар", "Усть-Каменогорск", "Семей", "Атырау",
+		"Костанай", "Кызылорда", "Петропавловск", "Актау", "Туркестан",
+	}
+
+	streets := []string{
+		"ул. Абая", "пр. Назарбаева", "ул. Сатпаева", "ул. Толе би",
+		"пр. Аль-Фараби", "ул. Жибек Жолы", "ул. Розыбакиева",
+		"пр. Райымбека", "ул. Гагарина", "ул. Макатаева",
+	}
+
+	city := cities[rand.Intn(len(cities))]
+	street := streets[rand.Intn(len(streets))]
+	building := rand.Intn(200) + 1
+
+	return fmt.Sprintf("г. %s, %s, д. %d", city, street, building)
+}
+
+func randomDate(daysAgo int) string {
+	now := time.Now()
+	randomDays := rand.Intn(daysAgo + 1)
+	date := now.AddDate(0, 0, -randomDays)
+	return date.Format("2006-01-02T15:04:05Z")
+}
+
+func writeJSONFile(filename string, data interface{}) {
+	file, err := os.Create(filename)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "    ")
+	if err := encoder.Encode(data); err != nil {
+		panic(err)
+	}
+}

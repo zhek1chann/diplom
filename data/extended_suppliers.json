@@ -1,0 +1,182 @@
+[
+    {
+        "user_id": 21,
+        "name": "ТОО \"Алматы Продукт\"",
+        "condition_id": 1,
+        "email": "supplier21@example.kz",
+        "phone": "+7 701 093 32 33",
+        "address": "г. Шымкент, ул. Розыбакиева, д. 179",
+        "tin": "KZ935631309900"
+    },
+    {
+        "user_id": 22,
+        "name": "ОАО \"Караганда Снаб\"",
+        "condition_id": 2,
+        "email": "supplier22@example.kz",
+        "phone": "+7 701 298 28 73",
+        "address": "г. Актобе, пр. Райымбека, д. 198",
+        "tin": "KZ625967721382"
+    },
+    {
+        "user_id": 23,
+        "name": "ИП Петров И.И.",
+        "condition_id": 3,
+        "email": "supplier23@example.kz",
+        "phone": "+7 701 023 67 51",
+        "address": "г. Усть-Каменогорск, пр. Назарбаева, д. 21",
+        "tin": "KZ836673354936"
+    },
+    {
+        "user_id": 24,
+        "name": "ТОО \"Астана Дистрибьюшн\"",
+        "condition_id": 4,
+        "email": "supplier24@example.kz",
+        "phone": "+7 701 567 59 96",
+        "address": "г. Шымкент, пр. Аль-Фараби, д. 3",
+        "tin": "KZ169732794283"
+    },
+    {
+        "user_id": 25,
+        "name": "ООО \"Казахстан-Фуд\"",
+        "condition_id": 5,
+        "email": "supplier25@example.kz",
+        "phone": "+7 701 922 77 20",
+        "address": "г. Петропавловск, ул. Сатпаева, д. 71",
+        "tin": "KZ813505794668"
+    },
+    {
+        "user_id": 26,
+        "name": "АО \"Нур-Султан Трейд\"",
+        "condition_id": 1,
+        "email": "supplier26@example.kz",
+        "phone": "+7 701 294 11 67",
+        "address": "г. Петропавловск, ул. Макатаева, д. 60",
+        "tin": "KZ180886663073"
+    },
+    {
+        "user_id": 27,
+        "name": "ТОО \"Шымкент Опт\"",
+        "condition_id": 2,
+        "email": "supplier27@example.kz",
+        "phone": "+7 701 494 19 18",
+        "address": "г. Кызылорда, ул. Гагарина, д. 190",
+        "tin": "KZ126756820439"
+    },
+    {
+        "user_id": 28,
+        "name": "ИП Сидоров А.А.",
+        "condition_id": 3,
+        "email": "supplier28@example.kz",
+        "phone": "+7 701 172 46 53",
+        "address": "г. Актау, ул. Сатпаева, д. 32",
+        "tin": "KZ905574909462"
+    },
+    {
+        "user_id": 29,
+        "name": "ООО \"Актобе-Агро\"",
+        "condition_id": 4,
+        "email": "supplier29@example.kz",
+        "phone": "+7 701 256 88 55",
+        "address": "г. Усть-Каменогорск, ул. Розыбакиева, д. 194",
+        "tin": "KZ941593576045"
+    },
+    {
+        "user_id": 30,
+        "name": "ТОО \"Костанай Зерно\"",
+        "condition_id": 5,
+        "email": "supplier30@example.kz",
+        "phone": "+7 701 391 53 74",
+        "address": "г. Тараз, ул. Гагарина, д. 177",
+        "tin": "KZ315578539176"
+    },
+    {
+        "user_id": 31,
+        "name": "АО \"Павлодар Молоко\"",
+        "condition_id": 1,
+        "email": "supplier31@example.kz",
+        "phone": "+7 701 359 71 80",
+        "address": "г. Тараз, ул. Абая, д. 133",
+        "tin": "KZ681818009078"
+    },
+    {
+        "user_id": 32,
+        "name": "ООО \"Тараз-Мясо\"",
+        "condition_id": 2,
+        "email": "supplier32@example.kz",
+        "phone": "+7 701 285 78 55",
+        "address": "г. Алматы, ул. Розыбакиева, д. 49",
+        "tin": "KZ131143580834"
+    },
+    {
+        "user_id": 33,
+        "name": "ТОО \"Усть-Каменогорск Рыба\"",
+        "condition_id": 3,
+        "email": "supplier33@example.kz",
+        "phone": "+7 701 492 66 39",
+        "address": "г. Тараз, ул. Макатаева, д. 175",
+        "tin": "KZ239896856296"
+    },
+    {
+        "user_id": 34,
+        "name": "ИП Иванов С.С.",
+        "condition_id": 4,
+        "email": "supplier34@example.kz",
+        "phone": "+7 701 032 65 41",
+        "address": "г. Атырау, ул. Сатпаева, д. 20",
+        "tin": "KZ777165626242"
+    },
+    {
+        "user_id": 35,
+        "name": "АО \"Атырау-Нефтехим\"",
+        "condition_id": 5,
+        "email": "supplier35@example.kz",
+        "phone": "+7 701 632 22 35",
+        "address": "г. Актау, ул. Абая, д. 122",
+        "tin": "KZ208632186175"
+    },
+    {
+        "user_id": 36,
+        "name": "ТОО \"Кызылорда Рис\"",
+        "condition_id": 1,
+        "email": "supplier36@example.kz",
+        "phone": "+7 701 418 32 50",
+        "address": "г. Алматы, пр. Аль-Фараби, д. 186",
+        "tin": "KZ881434854660"
+    },
+    {
+        "user_id": 37,
+        "name": "ООО \"Актау Морепродукты\"",
+        "condition_id": 2,
+        "email": "supplier37@example.kz",
+        "phone": "+7 701 320 69 60",
+        "address": "г. Тараз, ул. Жибек Жолы, д. 87",
+        "tin": "KZ262613650226"
+    },
+    {
+        "user_id": 38,
+        "name": "ИП Смирнов Д.Д.",
+        "condition_id": 3,
+        "email": "supplier38@example.kz",
+        "phone": "+7 701 695 78 52",
+        "address": "г. Кызылорда, пр. Аль-Фараби, д. 179",
+        "tin": "KZ477106875737"
+    },
+    {
+        "user_id": 39,
+        "name": "ТОО \"Туркестан Фрукты\"",
+        "condition_id": 4,
+        "email": "supplier39@example.kz",
+        "phone": "+7 701 373 47 56",
+        "address": "г. Кызылорда, пр. Назарбаева, д. 17",
+        "tin": "KZ608994629997"
+    },
+    {
+        "user_id": 40,
+        "name": "АО \"Жезказган Металл\"",
+        "condition_id": 5,
+        "email": "supplier40@example.kz",
+        "phone": "+7 701 511 99 90",
+        "address": "г. Атырау, ул. Жибек Жолы, д. 16",
+        "tin": "KZ604786083507"
+    }
+]
