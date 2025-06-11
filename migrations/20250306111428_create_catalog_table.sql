@@ -8,6 +8,26 @@ CREATE TABLE delivery_conditions (
     delivery_fee           NUMERIC
 );
 
+-- Create categories table
+CREATE TABLE categories (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create subcategories table
+CREATE TABLE subcategories (
+    id SERIAL PRIMARY KEY,
+    category_id INTEGER NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+);
+
 CREATE TABLE users (
     id             SERIAL PRIMARY KEY,
     name           VARCHAR(50) NOT NULL,
@@ -38,8 +58,17 @@ CREATE TABLE products (
     created_at         TIMESTAMP NOT NULL DEFAULT now(),
     updated_at         TIMESTAMP NOT NULL DEFAULT now(),
     lowest_supplier_id INTEGER,
-    FOREIGN KEY (lowest_supplier_id) REFERENCES suppliers(user_id)
+    category_id INTEGER,
+    subcategory_id INTEGER,
+    FOREIGN KEY (lowest_supplier_id) REFERENCES suppliers(user_id),
+    FOREIGN KEY (category_id) REFERENCES categories(id),
+    FOREIGN KEY (subcategory_id) REFERENCES subcategories(id)
 );
+
+-- Create indexes for better performance
+CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_products_subcategory ON products(subcategory_id);
+CREATE INDEX idx_subcategories_category ON subcategories(category_id);
 
 CREATE TABLE products_supplier (
     product_id  INTEGER NOT NULL,
@@ -143,9 +172,17 @@ DROP TABLE IF EXISTS cart_items;
 DROP TABLE IF EXISTS carts;
 
 DROP TABLE IF EXISTS products_supplier;
+
+-- Drop indexes before dropping tables
+DROP INDEX IF EXISTS idx_subcategories_category;
+DROP INDEX IF EXISTS idx_products_subcategory;
+DROP INDEX IF EXISTS idx_products_category;
+
 DROP TABLE IF EXISTS products;
 
 DROP TABLE IF EXISTS suppliers;
+DROP TABLE IF EXISTS subcategories;
+DROP TABLE IF EXISTS categories;
 DROP TABLE IF EXISTS delivery_conditions;
 DROP TABLE IF EXISTS users;
 

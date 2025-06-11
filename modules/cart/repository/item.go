@@ -6,6 +6,7 @@ import (
 	"diploma/modules/cart/model"
 	"diploma/pkg/client/db"
 	"fmt"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 )
@@ -34,7 +35,7 @@ func (r *cartRepo) ItemQuantity(ctx context.Context, cartID, productId, supplier
 	var quantity int
 	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&quantity)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == sql.ErrNoRows || strings.Contains(err.Error(), "no rows") {
 			return 0, model.ErrNoRows
 		}
 		return 0, fmt.Errorf("failed to get item quantity: %w", err)

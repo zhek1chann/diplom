@@ -8,6 +8,7 @@ import (
 	repoModel "diploma/modules/product/repository/product/model"
 	"diploma/pkg/client/db"
 	"fmt"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 )
@@ -57,15 +58,31 @@ func NewRepository(db db.Client) *repo {
 func (r *repo) GetProduct(ctx context.Context, id int64) (*model.Product, error) {
 	builder := sq.
 		Select(
-			pIdCol,
-			pNameCol,
-			pImageUrlCol,
-			pGTINCol,
-			pCreatedAtCol,
-			pUpdatedAtCol,
+			"p."+pIdCol,
+			"p."+pNameCol,
+			"p."+pImageUrlCol,
+			"p."+pGTINCol,
+			"p."+pCreatedAtCol,
+			"p."+pUpdatedAtCol,
+			"p.category_id",
+			"p.subcategory_id",
+			"c.name AS category_name",
+			"sc.name AS subcategory_name",
+			"ps."+psPriceCol+" AS ps_price",
+			"ps."+psSellAmountCol+" AS ps_sell_amount",
+			"s."+sNameCol+" AS supplier_name",
+			"s."+sOrderAmountCol+" AS supplier_order_amount",
+			"dc."+dcFreeDeliveryAmountCol+" AS dc_min_free_delivery_amount",
+			"dc."+dcDeliveryFeeCol+" AS dc_delivery_fee",
 		).
-		From(productsTbl).
-		Where(sq.Eq{pIdCol: id}).
+		From(productsTbl + " AS p").
+		LeftJoin("categories AS c ON p.category_id = c.id").
+		LeftJoin("subcategories AS sc ON p.subcategory_id = sc.id").
+		LeftJoin(productsSupplierTbl + " AS ps ON ps." + psProductIDCol + " = p." + pIdCol +
+			" AND ps." + psSupplierIDCol + " = p." + pLowestSupplierIDCol).
+		LeftJoin(supplierTbl + " AS s ON s." + sIDCol + " = ps." + psSupplierIDCol).
+		LeftJoin(deliveryConditionTbl + " AS dc ON dc." + dcIDCol + " = s." + sDeliveryConditionIDCol).
+		Where(sq.Eq{"p." + pIdCol: id}).
 		PlaceholderFormat(sq.Dollar)
 
 	query, args, err := builder.ToSql()
@@ -79,6 +96,9 @@ func (r *repo) GetProduct(ctx context.Context, id int64) (*model.Product, error)
 	}
 
 	var product repoModel.Product
+	var ps repoModel.ProductSupplier
+	var s repoModel.Supplier
+
 	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(
 		&product.ID,
 		&product.Name,
@@ -86,6 +106,16 @@ func (r *repo) GetProduct(ctx context.Context, id int64) (*model.Product, error)
 		&product.GTIN,
 		&product.CreatedAt,
 		&product.UpdatedAt,
+		&product.CategoryID,
+		&product.SubcategoryID,
+		&product.CategoryName,
+		&product.SubcategoryName,
+		&ps.Price,
+		&ps.SellAmount,
+		&s.Name,
+		&s.OrderAmount,
+		&s.FreeDeliveryAmount,
+		&s.DeliveryFee,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -94,7 +124,109 @@ func (r *repo) GetProduct(ctx context.Context, id int64) (*model.Product, error)
 		return nil, fmt.Errorf("failed to get product: %w", err)
 	}
 
+	ps.Supplier = s
+	product.LowestSupplier = ps
+
 	return converter.ToProductFromRepo(product), nil
+}
+
+// GetProductList retrieves a list of products with their lowest supplier info
+func (r *repo) GetProductList(ctx context.Context, queryParam *model.ProductListQuery) ([]model.Product, error) {
+	builder := sq.
+		Select(
+			"p."+pIdCol,
+			"p."+pNameCol,
+			"p."+pImageUrlCol,
+			"p."+pGTINCol,
+			"p."+pCreatedAtCol,
+			"p."+pUpdatedAtCol,
+			"p.category_id",
+			"p.subcategory_id",
+			"c.name AS category_name",
+			"sc.name AS subcategory_name",
+			"ps."+psPriceCol+" AS ps_price",
+			"ps."+psSellAmountCol+" AS ps_sell_amount",
+			"s."+sNameCol+" AS supplier_name",
+			"s."+sOrderAmountCol+" AS supplier_order_amount",
+			"dc."+dcFreeDeliveryAmountCol+" AS dc_min_free_delivery_amount",
+			"dc."+dcDeliveryFeeCol+" AS dc_delivery_fee",
+		).
+		From(productsTbl + " AS p").
+		LeftJoin("categories AS c ON p.category_id = c.id").
+		LeftJoin("subcategories AS sc ON p.subcategory_id = sc.id").
+		LeftJoin(productsSupplierTbl + " AS ps ON ps." + psProductIDCol + " = p." + pIdCol +
+			" AND ps." + psSupplierIDCol + " = p." + pLowestSupplierIDCol).
+		LeftJoin(supplierTbl + " AS s ON s." + sIDCol + " = ps." + psSupplierIDCol).
+		LeftJoin(deliveryConditionTbl + " AS dc ON dc." + dcIDCol + " = s." + sDeliveryConditionIDCol)
+
+	if queryParam.CategoryID != nil {
+		builder = builder.Where(sq.Eq{"p.category_id": *queryParam.CategoryID})
+	}
+
+	if queryParam.SubcategoryID != nil {
+		builder = builder.Where(sq.Eq{"p.subcategory_id": *queryParam.SubcategoryID})
+	}
+
+	builder = builder.
+		OrderBy("p." + pIdCol).
+		Limit(uint64(queryParam.Limit)).
+		Offset(uint64(queryParam.Offset)).
+		PlaceholderFormat(sq.Dollar)
+
+	query, args, err := builder.ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("failed to build get product list query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.GetProductList",
+		QueryRaw: query,
+	}
+
+	rows, err := r.db.DB().QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get product list: %w", err)
+	}
+	defer rows.Close()
+
+	var products []repoModel.Product
+	for rows.Next() {
+		var product repoModel.Product
+		var ps repoModel.ProductSupplier
+		var s repoModel.Supplier
+
+		err := rows.Scan(
+			&product.ID,
+			&product.Name,
+			&product.ImageUrl,
+			&product.GTIN,
+			&product.CreatedAt,
+			&product.UpdatedAt,
+			&product.CategoryID,
+			&product.SubcategoryID,
+			&product.CategoryName,
+			&product.SubcategoryName,
+			&ps.Price,
+			&ps.SellAmount,
+			&s.Name,
+			&s.OrderAmount,
+			&s.FreeDeliveryAmount,
+			&s.DeliveryFee,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan product: %w", err)
+		}
+
+		ps.Supplier = s
+		product.LowestSupplier = ps
+		products = append(products, product)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating products: %w", err)
+	}
+
+	return converter.ToProductListFromRepo(products), nil
 }
 
 // GetProductListByIDList retrieves a list of products by their IDs
@@ -217,88 +349,6 @@ func (r *repo) GetSupplierProductListByProduct(ctx context.Context, id int64) ([
 	return results, nil
 }
 
-// GetProductList retrieves a list of products with their lowest supplier info
-func (r *repo) GetProductList(ctx context.Context, queryParam *model.ProductListQuery) ([]model.Product, error) {
-	builder := sq.Select(
-		"p."+pIdCol+" AS product_id",
-		"p."+pNameCol+" AS product_name",
-		"p."+pImageUrlCol+" AS product_image_url",
-		"p."+pGTINCol+" AS product_gtin",
-		"ps."+psPriceCol+" AS ps_price",
-		"ps."+psSellAmountCol+" AS ps_sell_amount",
-		"s."+sNameCol+" AS supplier_name",
-		"s."+sOrderAmountCol+" AS supplier_order_amount",
-		"dc."+dcFreeDeliveryAmountCol+" AS dc_min_free_delivery_amount",
-		"dc."+dcDeliveryFeeCol+" AS dc_delivery_fee",
-	).
-		From(productsTbl + " AS p").
-		LeftJoin(productsSupplierTbl + " AS ps ON ps." + psProductIDCol + " = p." + pIdCol +
-			" AND ps." + psSupplierIDCol + " = p." + pLowestSupplierIDCol).
-		LeftJoin(supplierTbl + " AS s ON s." + sIDCol + " = ps." + psSupplierIDCol).
-		LeftJoin(deliveryConditionTbl + " AS dc ON dc." + dcIDCol + " = s." + sDeliveryConditionIDCol).
-		PlaceholderFormat(sq.Dollar)
-
-	if queryParam.Limit > 0 {
-		builder = builder.Limit(uint64(queryParam.Limit))
-	} else {
-		builder = builder.Limit(30)
-	}
-	if queryParam.Offset > 0 {
-		builder = builder.Offset(uint64(queryParam.Offset))
-	}
-
-	query, args, err := builder.ToSql()
-	if err != nil {
-		return nil, fmt.Errorf("failed to build get product list query: %w", err)
-	}
-
-	q := db.Query{
-		Name:     "product_repository.GetProductList",
-		QueryRaw: query,
-	}
-
-	rows, err := r.db.DB().QueryContext(ctx, q, args...)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get product list: %w", err)
-	}
-	defer rows.Close()
-
-	var productList []repoModel.Product
-	for rows.Next() {
-		var (
-			p  repoModel.Product
-			ps repoModel.ProductSupplier
-			s  repoModel.Supplier
-		)
-
-		err := rows.Scan(
-			&p.ID,
-			&p.Name,
-			&p.ImageUrl,
-			&p.GTIN,
-			&ps.Price,
-			&ps.SellAmount,
-			&s.Name,
-			&s.OrderAmount,
-			&s.FreeDeliveryAmount,
-			&s.DeliveryFee,
-		)
-		if err != nil {
-			return nil, fmt.Errorf("failed to scan product: %w", err)
-		}
-
-		ps.Supplier = s
-		p.LowestSupplier = ps
-		productList = append(productList, p)
-	}
-
-	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("error iterating products: %w", err)
-	}
-
-	return converter.ToProductListFromRepo(productList), nil
-}
-
 // GetTotalProducts returns the total number of products
 func (r *repo) GetTotalProducts(ctx context.Context) (int, error) {
 	builder := sq.
@@ -409,6 +459,8 @@ func (r *repo) CreateProduct(ctx context.Context, product *model.Product) (int64
 			pNameCol,
 			pImageUrlCol,
 			pGTINCol,
+			"category_id",
+			"subcategory_id",
 			pCreatedAtCol,
 			pUpdatedAtCol,
 		).
@@ -416,6 +468,8 @@ func (r *repo) CreateProduct(ctx context.Context, product *model.Product) (int64
 			product.Name,
 			product.ImageUrl,
 			product.GTIN,
+			product.CategoryID,
+			product.SubcategoryID,
 			product.CreatedAt,
 			product.UpdatedAt,
 		).
@@ -584,4 +638,121 @@ func (r *repo) GetTotalProductsBySupplier(ctx context.Context, supplierID int64)
 	}
 
 	return total, nil
+}
+
+// FindOrCreateCategory finds a category by name or creates it if it doesn't exist
+func (r *repo) FindOrCreateCategory(ctx context.Context, name string) (int, error) {
+	// First try to find existing category
+	findBuilder := sq.
+		Select("id").
+		From("categories").
+		Where(sq.Eq{"name": name}).
+		PlaceholderFormat(sq.Dollar)
+
+	findQuery, findArgs, err := findBuilder.ToSql()
+	if err != nil {
+		return 0, fmt.Errorf("failed to build find category query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.FindCategory",
+		QueryRaw: findQuery,
+	}
+
+	var categoryID int
+	err = r.db.DB().QueryRowContext(ctx, q, findArgs...).Scan(&categoryID)
+	if err == nil {
+		return categoryID, nil // Found existing category
+	}
+
+	// Check for "no rows" errors more broadly - could be sql.ErrNoRows or wrapped/custom error
+	if err == sql.ErrNoRows || strings.Contains(err.Error(), "no rows") {
+		// Category doesn't exist, create it
+		createBuilder := sq.
+			Insert("categories").
+			Columns("name").
+			Values(name).
+			Suffix("RETURNING id").
+			PlaceholderFormat(sq.Dollar)
+
+		createQuery, createArgs, err := createBuilder.ToSql()
+		if err != nil {
+			return 0, fmt.Errorf("failed to build create category query: %w", err)
+		}
+
+		createQ := db.Query{
+			Name:     "product_repository.CreateCategory",
+			QueryRaw: createQuery,
+		}
+
+		err = r.db.DB().QueryRowContext(ctx, createQ, createArgs...).Scan(&categoryID)
+		if err != nil {
+			return 0, fmt.Errorf("failed to create category: %w", err)
+		}
+
+		return categoryID, nil
+	}
+
+	// Some other error occurred during find
+	return 0, fmt.Errorf("failed to find category: %w", err)
+}
+
+// FindOrCreateSubcategory finds a subcategory by name and category_id or creates it if it doesn't exist
+func (r *repo) FindOrCreateSubcategory(ctx context.Context, name string, categoryID int) (int, error) {
+	// First try to find existing subcategory
+	findBuilder := sq.
+		Select("id").
+		From("subcategories").
+		Where(sq.And{
+			sq.Eq{"name": name},
+			sq.Eq{"category_id": categoryID},
+		}).
+		PlaceholderFormat(sq.Dollar)
+
+	findQuery, findArgs, err := findBuilder.ToSql()
+	if err != nil {
+		return 0, fmt.Errorf("failed to build find subcategory query: %w", err)
+	}
+
+	q := db.Query{
+		Name:     "product_repository.FindSubcategory",
+		QueryRaw: findQuery,
+	}
+
+	var subcategoryID int
+	err = r.db.DB().QueryRowContext(ctx, q, findArgs...).Scan(&subcategoryID)
+	if err == nil {
+		return subcategoryID, nil // Found existing subcategory
+	}
+
+	// Check for "no rows" errors more broadly - could be sql.ErrNoRows or wrapped/custom error
+	if err == sql.ErrNoRows || strings.Contains(err.Error(), "no rows") {
+		// Subcategory doesn't exist, create it
+		createBuilder := sq.
+			Insert("subcategories").
+			Columns("name", "category_id").
+			Values(name, categoryID).
+			Suffix("RETURNING id").
+			PlaceholderFormat(sq.Dollar)
+
+		createQuery, createArgs, err := createBuilder.ToSql()
+		if err != nil {
+			return 0, fmt.Errorf("failed to build create subcategory query: %w", err)
+		}
+
+		createQ := db.Query{
+			Name:     "product_repository.CreateSubcategory",
+			QueryRaw: createQuery,
+		}
+
+		err = r.db.DB().QueryRowContext(ctx, createQ, createArgs...).Scan(&subcategoryID)
+		if err != nil {
+			return 0, fmt.Errorf("failed to create subcategory: %w", err)
+		}
+
+		return subcategoryID, nil
+	}
+
+	// Some other error occurred during find
+	return 0, fmt.Errorf("failed to find subcategory: %w", err)
 }

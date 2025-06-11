@@ -43,9 +43,11 @@ func (h *CatalogHandler) AddProduct(c *gin.Context) {
 	}
 
 	err := h.service.AddProduct(c.Request.Context(), &model.AddProductSupplier{
-		GTIN:       req.GTIN,
-		SupplierID: claims.UserID,
-		Price:      req.Price,
+		GTIN:          req.GTIN,
+		SupplierID:    claims.UserID,
+		Price:         req.Price,
+		CategoryID:    req.CategoryID,
+		SubcategoryID: req.SubcategoryID,
 	})
 
 	if err != nil {

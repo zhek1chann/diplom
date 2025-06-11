@@ -39,6 +39,9 @@ func ToAPIProductFromService(product *model.Product) *modelApi.Product {
 		ID:                    product.ID,
 		Name:                  product.Name,
 		ImageUrl:              product.ImageUrl,
+		Category:              product.CategoryName,
+		Subcategory:           product.SubcategoryName,
+		GTIN:                  string(product.GTIN),
 		LowestProductSupplier: ToAPIProductSupplierFromService(product.LowestProductSupplier),
 	}
 }

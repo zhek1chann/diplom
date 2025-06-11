@@ -3,30 +3,36 @@ package model
 import "time"
 
 type Product struct {
-	ID             int64
-	GTIN           int64
-	Name           string
-	ImageUrl       string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	LowestSupplier ProductSupplier
+	ID              int64
+	GTIN            int64
+	Name            string
+	ImageUrl        string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
+	CategoryID      *int
+	SubcategoryID   *int
+	CategoryName    *string
+	SubcategoryName *string
+	LowestSupplier  ProductSupplier
 }
 
 type ProductSupplier struct {
-	Price      int
-	SellAmount int
+	Price      *int
+	SellAmount *int
 	Supplier   Supplier
 }
 
 type Supplier struct {
 	ID                 int64
-	Name               string
-	OrderAmount        int
-	FreeDeliveryAmount int
-	DeliveryFee        int
+	Name               *string
+	OrderAmount        *int
+	FreeDeliveryAmount *int
+	DeliveryFee        *int
 }
 
 type ProductListQuery struct {
-	Offset int
-	Limit  int
+	Offset        int
+	Limit         int
+	CategoryID    *int
+	SubcategoryID *int
 }

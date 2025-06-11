@@ -8,6 +8,7 @@ import (
 	modelRepo "diploma/modules/cart/repository/model"
 	"diploma/pkg/client/db"
 	"fmt"
+	"strings"
 
 	sq "github.com/Masterminds/squirrel"
 )
@@ -58,7 +59,7 @@ func (r *cartRepo) Cart(ctx context.Context, userID int64) (*model.Cart, error) 
 	var cart modelRepo.Cart
 	err = r.db.DB().QueryRowContext(ctx, q, args...).Scan(&cart.ID, &cart.Total, &cart.CustomerID)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == sql.ErrNoRows || strings.Contains(err.Error(), "no rows") {
 			return nil, model.ErrNoRows
 		}
 		return nil, fmt.Errorf("failed to get cart: %w", err)
@@ -121,7 +122,7 @@ func (r *cartRepo) GetCartItems(ctx context.Context, cartID int64) ([]model.Supp
 
 	rows, err := r.db.DB().QueryContext(ctx, q, args...)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == sql.ErrNoRows || strings.Contains(err.Error(), "no rows") {
 			return nil, model.ErrNoRows
 		}
 		return nil, fmt.Errorf("failed to get cart items: %w", err)

@@ -41,4 +41,8 @@ type IProductRepository interface {
 	CreateProductSupplier(ctx context.Context, supplierID, productID int64, price int) error
 	GetProductListBySupplier(ctx context.Context, supplierID int64, limit, offset int) ([]model.Product, error)
 	GetTotalProductsBySupplier(ctx context.Context, supplierID int64) (int, error)
+
+	// Category management
+	FindOrCreateCategory(ctx context.Context, name string) (int, error)
+	FindOrCreateSubcategory(ctx context.Context, name string, categoryID int) (int, error)
 }

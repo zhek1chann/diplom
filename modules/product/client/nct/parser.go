@@ -93,8 +93,8 @@ func ConvertHtmlToProduct(html string) []model.Product {
 		}
 		p := model.Product{
 			Name:        cleanText(tdMatches[0][1]),
-			Category:    cleanText(tdMatches[3][1]),
-			Subcategory: cleanText(tdMatches[4][1]),
+			CategoryName:    cleanText(tdMatches[3][1]),
+			SubcategoryName: cleanText(tdMatches[4][1]),
 		}
 		products = append(products, p)
 	}

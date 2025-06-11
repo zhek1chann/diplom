@@ -19,17 +19,17 @@ type Product struct {
 }
 
 type ProductSupplier struct {
-	Price      int      `json:"price"`
-	SellAmount int      `json:"sell_amount"`
+	Price      *int     `json:"price"`
+	SellAmount *int     `json:"sell_amount"`
 	Supplier   Supplier `json:"supplier"`
 }
 
 type Supplier struct {
-	ID                 int64  `json:"id"`
-	Name               string `json:"name"`
-	OrderAmount        int    `json:"order_amount"`
-	FreeDeliveryAmount int    `json:"free_delivery_amount"`
-	DeliveryFee        int    `json:"delivery_fee"`
+	ID                 int64   `json:"id"`
+	Name               *string `json:"name"`
+	OrderAmount        *int    `json:"order_amount"`
+	FreeDeliveryAmount *int    `json:"free_delivery_amount"`
+	DeliveryFee        *int    `json:"delivery_fee"`
 }
 
 type DetailedProduct struct {
@@ -38,8 +38,10 @@ type DetailedProduct struct {
 }
 
 type AddProductRequest struct {
-	GTIN  string  `json:"gtin"`
-	Price float64 `json:"price"`
+	GTIN          string  `json:"gtin"`
+	Price         float64 `json:"price"`
+	CategoryID    *int    `json:"category_id,omitempty"`
+	SubcategoryID *int    `json:"subcategory_id,omitempty"`
 }
 
 type AddProductResponse struct {
